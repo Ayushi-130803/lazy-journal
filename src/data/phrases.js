@@ -1,4 +1,3 @@
-// src/data/phrases.js
 const phrases = {
   skippingPrompts: [
     "No worries, we all have those days!",
@@ -36,4 +35,4 @@ const phrases = {
   ],
 };
 
-export default phrases; // <--- THIS LINE IS CRUCIAL!
+export default phrases;

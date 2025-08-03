@@ -6,8 +6,8 @@ import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import Calendar from './pages/Calendar';
 import Profile from './pages/Profile';
-import Reports from './pages/reports';
-import Settings from './pages/settings';
+import Reports from './pages/Reports';
+import Settings from './pages/Settings';
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home');

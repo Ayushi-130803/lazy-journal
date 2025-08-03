@@ -1,38 +1,24 @@
-const phrases = {
-  skippingPrompts: [
-    "No worries, we all have those days!",
-    "Skipping this one for now, got it.",
-    "Alright, moving on!",
-    "It's okay to skip, your journal is here when you're ready.",
-  ],
-  skippingWholeDay: [
-    "Life happens! We'll catch you tomorrow.",
-    "Day skipped. No pressure at all.",
-    "Taking a break, understood!",
-  ],
-  postEntryFeedback: [
-    "Nice job! Your thoughts are safe here.",
-    "Entry saved! You did great.",
-    "Awesome work, keep it up!",
-    "Another day, another reflection. Well done!",
-    "Fantastic! Your journal thanks you.",
-  ],
-  notificationReminders: [
-    "Time to check in with yourself!",
-    "Your journal misses you!",
-    "A moment for reflection, perhaps?",
-    "Quick journal time!",
-  ],
-  weeklySummary: [
-    "Here's a look back at your week!",
-    "Your weekly journey at a glance:",
-    "Reflecting on your past seven days...",
-  ],
-  monthlySummary: [
-    "A full month of insights!",
-    "Your monthly recap is ready.",
-    "Dive into your last 30 days of thoughts.",
-  ],
-};
+const prompts = [
+  {
+    id: 'smallWin',
+    text: "What's a little moment that brought a smile to your face today?", // More connecting
+  },
+  {
+    id: 'emotionalState',
+    text: "How's your heart feeling right now? Let's check in with your emotions.", // More connecting
+  },
+  {
+    id: 'unexpectedHappened',
+    text: "Did any little surprise or unexpected twist pop up today?", // More connecting
+  },
+  {
+    id: 'niceThingNoticed',
+    text: "What's one small, lovely thing you noticed or appreciated today?", // More connecting
+  },
+  {
+    id: 'gratitude',
+    text: "What's one thing you're quietly grateful for today?", // New, connecting prompt
+  },
+];
 
-export default phrases;
+export default prompts;
