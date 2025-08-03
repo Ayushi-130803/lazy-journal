@@ -1,21 +1,17 @@
-// src/pages/Home.jsx
 import React, { useState } from 'react';
-import prompts from '../data/prompts'; // Import prompts data
-import phrases from '../data/phrases'; // Make sure this line is present and correct
-import MoodSlider from '../components/MoodSlider'; // Import the new MoodSlider component
+import prompts from '../data/prompts';
+import phrases from '../data/phrases';
+import MoodSlider from '../components/moodslider';
 
-function Home() {
-  // State to store journal entries for each prompt
+function Home({ addJournalEntry, isDarkMode }) { // Receive isDarkMode prop
   const [entries, setEntries] = useState(
     prompts.reduce((acc, prompt) => ({ ...acc, [prompt.id]: '' }), {})
   );
 
-  // State to store mood slider values for each prompt
   const [moods, setMoods] = useState(
-    prompts.reduce((acc, prompt) => ({ ...acc, [prompt.id]: 50 }), {}) // Default to 50 (middle)
+    prompts.reduce((acc, prompt) => ({ ...acc, [prompt.id]: 50 }), {})
   );
 
-  // Handle input change for journal entries
   const handleEntryChange = (promptId, value) => {
     setEntries((prevEntries) => ({
       ...prevEntries,
@@ -23,7 +19,6 @@ function Home() {
     }));
   };
 
-  // Handle mood slider change
   const handleMoodChange = (promptId, value) => {
     setMoods((prevMoods) => ({
       ...prevMoods,
@@ -31,9 +26,7 @@ function Home() {
     }));
   };
 
-  // Handle saving the journal entry
   const handleSaveEntry = () => {
-    // Combine entries and moods for saving
     const fullEntry = prompts.map(prompt => ({
       promptId: prompt.id,
       promptText: prompt.text,
@@ -41,18 +34,19 @@ function Home() {
       moodValue: moods[prompt.id]
     }));
 
-    console.log('Full Journal Entry:', fullEntry);
-    // In a real app, you would save this data to a backend or local storage
+    addJournalEntry(fullEntry);
+
+    console.log('Journal Entry Saved:', fullEntry);
     alert(phrases.postEntryFeedback[Math.floor(Math.random() * phrases.postEntryFeedback.length)]);
-    // Optionally clear entries after saving or mark as complete
-    // setEntries(prompts.reduce((acc, prompt) => ({ ...acc, [prompt.id]: '' }), {}));
-    // setMoods(prompts.reduce((acc, prompt) => ({ ...acc, [prompt.id]: 50 }), {}));
+
+    setEntries(prompts.reduce((acc, prompt) => ({ ...acc, [prompt.id]: '' }), {}));
+    setMoods(prompts.reduce((acc, prompt) => ({ ...acc, [prompt.id]: 50 }), {}));
   };
 
   return (
     <div className="max-w-3xl mx-auto p-4 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 transition-colors duration-300">
-      <h2 className="text-3xl font-bold mb-6 text-center text-gray-800 dark:text-gray-200">
-        <span role="img" aria-label="journal icon" className="mr-2">
+      <h2 className="text-4xl md:text-5xl font-extrabold mb-6 text-center text-gray-800 dark:text-gray-200 drop-shadow-md">
+        <span role="img" aria-label="journal icon" className="mr-3 text-5xl md:text-6xl transform hover:scale-110 transition-transform duration-200 inline-block">
           📖
         </span>
         Today's Journal
@@ -72,8 +66,7 @@ function Home() {
               onChange={(e) => handleEntryChange(prompt.id, e.target.value)}
             ></textarea>
 
-            {/* Render MoodSlider only for prompts that are flagged for mood (e.g., 'emotionalState') */}
-            {prompt.id === 'emotionalState' && ( // You can add a 'hasMood' property to prompts if more are needed
+            {prompt.id === 'emotionalState' && (
               <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
                 <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
                   How intensely are you feeling this? (1-100)
@@ -81,6 +74,7 @@ function Home() {
                 <MoodSlider
                   value={moods[prompt.id]}
                   onChange={(value) => handleMoodChange(prompt.id, value)}
+                  isDarkMode={isDarkMode} // Pass isDarkMode to MoodSlider
                 />
               </div>
             )}
