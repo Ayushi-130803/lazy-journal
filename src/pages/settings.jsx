@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { SunIcon, MoonIcon, PaintBrushIcon, PhotoIcon, BellAlertIcon, MusicalNoteIcon, KeyIcon } from '@heroicons/react/24/outline';
 
-function Settings({ isDarkMode, toggleDarkMode, backgroundColor, onBackgroundColorChange, backgroundImage, onBackgroundImageChange }) {
+function Settings({ isDarkMode, toggleDarkMode, backgroundImage, onBackgroundImageChange }) {
   // Local state for notification sound and reminder duration (can be synced with Profile later if needed)
   const [notificationSound, setNotificationSound] = useState('chime');
   const [reminderDuration, setReminderDuration] = useState('1hour');
@@ -23,7 +23,7 @@ function Settings({ isDarkMode, toggleDarkMode, backgroundColor, onBackgroundCol
 
   // Handle reset to defaults
   const handleResetDefaults = () => {
-    onBackgroundColorChange('#f3f4f6'); // Reset to default light gray
+    // Note: Since we removed onBackgroundColorChange, we only reset the image and dark mode
     onBackgroundImageChange(''); // Clear background image
     toggleDarkMode(false); // Use the passed toggleDarkMode function to reset to light mode
     setNotificationSound('chime');
@@ -32,7 +32,7 @@ function Settings({ isDarkMode, toggleDarkMode, backgroundColor, onBackgroundCol
   };
 
   return (
-    <div className="max-w-3xl mx-auto p-6 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 transition-colors duration-300">
+    <div className="max-w-3xl mx-auto p-6 bg-white/50 dark:bg-gray-800/50 backdrop-blur-md rounded-lg shadow-xl border border-gray-200/50 dark:border-gray-700/50 transition-colors duration-300">
       <h2 className="text-3xl font-bold mb-6 text-center text-gray-800 dark:text-gray-200">
         <span role="img" aria-label="settings icon" className="mr-2">
           ⚙️
@@ -42,7 +42,7 @@ function Settings({ isDarkMode, toggleDarkMode, backgroundColor, onBackgroundCol
 
       <div className="space-y-8">
         {/* Appearance Settings */}
-        <div className="bg-gray-50 dark:bg-gray-700 p-5 rounded-lg shadow-md border border-gray-100 dark:border-gray-600">
+        <div className="bg-white/50 dark:bg-gray-700/50 p-5 rounded-lg shadow-md border border-gray-100/50 dark:border-gray-600/50">
           <h3 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200 flex items-center">
             <PaintBrushIcon className="h-6 w-6 mr-2 text-indigo-500" /> Appearance
           </h3>
@@ -67,24 +67,10 @@ function Settings({ isDarkMode, toggleDarkMode, backgroundColor, onBackgroundCol
             </button>
           </div>
 
-          {/* Background Color Picker */}
-          <div className="mb-4">
-            <label htmlFor="backgroundColor" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Background Color
-            </label>
-            <input
-              type="color"
-              id="backgroundColor"
-              value={backgroundColor}
-              onChange={(e) => onBackgroundColorChange(e.target.value)}
-              className="w-full h-10 rounded-md border border-gray-300 dark:border-gray-600 cursor-pointer"
-            />
-          </div>
-
-          {/* Background Image Upload */}
+          {/* Themes */}
           <div>
             <label htmlFor="backgroundImage" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Background Image (Upload)
+              Custom Theme
             </label>
             <div className="flex items-center space-x-3">
               <input
@@ -105,7 +91,7 @@ function Settings({ isDarkMode, toggleDarkMode, backgroundColor, onBackgroundCol
         </div>
 
         {/* Notification Settings */}
-        <div className="bg-gray-50 dark:bg-gray-700 p-5 rounded-lg shadow-md border border-gray-100 dark:border-gray-600">
+        <div className="bg-white/50 dark:bg-gray-700/50 p-5 rounded-lg shadow-md border border-gray-100/50 dark:border-gray-600/50">
           <h3 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200 flex items-center">
             <BellAlertIcon className="h-6 w-6 mr-2 text-green-500" /> Notification Settings
           </h3>
@@ -150,7 +136,7 @@ function Settings({ isDarkMode, toggleDarkMode, backgroundColor, onBackgroundCol
         </div>
 
         {/* Account Settings */}
-        <div className="bg-gray-50 dark:bg-gray-700 p-5 rounded-lg shadow-md border border-gray-100 dark:border-gray-600">
+        <div className="bg-white/50 dark:bg-gray-700/50 p-5 rounded-lg shadow-md border border-gray-100/50 dark:border-gray-600/50">
           <h3 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200 flex items-center">
             <KeyIcon className="h-6 w-6 mr-2 text-red-500" /> Account
           </h3>

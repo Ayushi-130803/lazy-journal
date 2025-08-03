@@ -1,24 +1,22 @@
-const prompts = [
+// Each prompt must have: id, text, wordSuggestions, skipPhrases
+
+export const promptsData = [
   {
-    id: 'smallWin',
-    text: "What's a little moment that brought a smile to your face today?", // More connecting
+    id: "reflection",
+    text: "What is something you would have done differently today?",
+    wordSuggestions: ["apologize", "focus", "avoid", "listen"],
+    skipPhrases: ["I was perfect today", "Nothing to reflect on"],
   },
   {
-    id: 'emotionalState',
-    text: "How's your heart feeling right now? Let's check in with your emotions.", // More connecting
+    id: "grateful",
+    text: "What is something you're grateful for today?",
+    wordSuggestions: ["family", "sunset", "friend", "good food"],
+    skipPhrases: ["Nothing much good happened today", "Can't think of anything"],
   },
   {
-    id: 'unexpectedHappened',
-    text: "Did any little surprise or unexpected twist pop up today?", // More connecting
-  },
-  {
-    id: 'niceThingNoticed',
-    text: "What's one small, lovely thing you noticed or appreciated today?", // More connecting
-  },
-  {
-    id: 'gratitude',
-    text: "What's one thing you're quietly grateful for today?", // New, connecting prompt
+    id: "achievement",
+    text: "What did you accomplish today?",
+    wordSuggestions: ["finished work", "exercise", "called a friend"],
+    skipPhrases: ["Nothing worth mentioning", "No achievements today"],
   },
 ];
-
-export default prompts;

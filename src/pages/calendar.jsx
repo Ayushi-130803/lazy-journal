@@ -1,18 +1,15 @@
 import React, { useState } from 'react';
-import CalendarTile from '../components/CalendarTile';
+import CalendarTile from '../components/calendartile';
 
 function Calendar({ journalEntries, isDarkMode }) {
   const [currentDate, setCurrentDate] = useState(new Date());
 
   const year = currentDate.getFullYear();
-  const month = currentDate.getMonth(); // 0-indexed
+  const month = currentDate.getMonth();
 
-  // Get first day of the month (0 = Sunday, 6 = Saturday)
   const firstDayOfMonth = new Date(year, month, 1).getDay();
-  // Get number of days in the current month
   const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-  // Map journal entries to a quick lookup object for the current month
   const entriesForMonth = journalEntries.reduce((acc, entry) => {
     const entryDate = new Date(entry.date);
     if (entryDate.getFullYear() === year && entryDate.getMonth() === month) {
@@ -21,7 +18,6 @@ function Calendar({ journalEntries, isDarkMode }) {
       const moodValue = emotionalStateEntry ? emotionalStateEntry.moodValue : 50;
       const moodText = emotionalStateEntry ? emotionalStateEntry.entryText : '';
 
-      // Simple categorization based on keywords for the calendar tile
       let moodCategory = 'neutral';
       const lowerCaseText = moodText.toLowerCase();
 
@@ -41,29 +37,23 @@ function Calendar({ journalEntries, isDarkMode }) {
     }
     return acc;
   }, {});
-
-  // Helper to get mood data for a specific date
+  
   const getMoodForDate = (day) => {
     return entriesForMonth[day] || null;
   };
 
-  // Function to get month name
   const getMonthName = (date) => {
     return date.toLocaleString('default', { month: 'long' });
   };
 
-  // Generate an array of days for the calendar grid
   const days = [];
-  // Add leading blank tiles for the days before the 1st of the month
   for (let i = 0; i < firstDayOfMonth; i++) {
     days.push(null);
   }
-  // Add actual days of the month
   for (let i = 1; i <= daysInMonth; i++) {
     days.push(i);
   }
 
-  // Handle month navigation
   const goToPreviousMonth = () => {
     setCurrentDate(new Date(year, month - 1, 1));
   };
@@ -75,64 +65,63 @@ function Calendar({ journalEntries, isDarkMode }) {
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   return (
-    <div className="max-w-4xl mx-auto p-4 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 transition-colors duration-300">
-      <h2 className="text-3xl font-bold mb-6 text-center text-gray-800 dark:text-gray-200">
-        <span role="img" aria-label="calendar icon" className="mr-2">
-          📅
-        </span>
-        Mood Calendar
-      </h2>
+    <div className="max-w-xl mx-auto font-sans">
+      <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-md p-2 rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 min-h-[70vh] transition-all duration-300">
+        <h2 className="text-lg font-bold mb-2 text-center text-gray-800 dark:text-gray-200">
+          <span role="img" aria-label="calendar icon" className="mr-2">
+            📅
+          </span>
+          Mood Calendar
+        </h2>
 
-      {/* Month Navigation */}
-      <div className="flex justify-between items-center mb-6">
-        <button
-          onClick={goToPreviousMonth}
-          className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-gray-700 dark:text-gray-300"
-        >
-          &lt;
-        </button>
-        <h3 className="text-2xl font-semibold text-gray-800 dark:text-gray-200">
-          {getMonthName(currentDate)} {year}
-        </h3>
-        <button
-          onClick={goToNextMonth}
-          className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-gray-700 dark:text-gray-300"
-        >
-          &gt;
-        </button>
-      </div>
+        <div className="flex justify-between items-center mb-2">
+          <button
+            onClick={goToPreviousMonth}
+            className="p-1 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-gray-700 dark:text-gray-300"
+          >
+            &lt;
+          </button>
+          <h3 className="text-base font-semibold text-gray-800 dark:text-gray-200">
+            {getMonthName(currentDate)} {year}
+          </h3>
+          <button
+            onClick={goToNextMonth}
+            className="p-1 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-gray-700 dark:text-gray-300"
+          >
+            &gt;
+          </button>
+        </div>
 
-      {/* Day Names Header */}
-      <div className="grid grid-cols-7 gap-2 mb-2">
-        {dayNames.map((dayName) => (
-          <div key={dayName} className="text-center font-medium text-gray-600 dark:text-gray-400">
-            {dayName}
-          </div>
-        ))}
-      </div>
+        <div className="grid grid-cols-7 gap-1 mb-1">
+          {dayNames.map((dayName) => (
+            <div key={dayName} className="text-center font-medium text-gray-600 dark:text-gray-400 text-xs">
+              {dayName}
+            </div>
+          ))}
+        </div>
 
-      {/* Calendar Grid */}
-      <div className="grid grid-cols-7 gap-2">
-        {days.map((day, index) => {
-          const moodData = day ? getMoodForDate(day) : null;
-          const today = new Date();
-          const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
-          const isPastDay = day && isCurrentMonth && day < today.getDate();
-          const hasEntry = !!moodData;
-          const isMissed = day && isPastDay && !hasEntry; // A day is missed if it's in the past and has no entry
+        <div className="grid grid-cols-7 gap-1 h-full">
+          {days.map((day, index) => {
+            const moodData = day ? getMoodForDate(day) : null;
+            const today = new Date();
+            const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
+            const isPastDay = day && isCurrentMonth && day < today.getDate();
+            const hasEntry = !!moodData;
+            const isMissed = day && isPastDay && !hasEntry;
 
-          return (
-            <CalendarTile
-              key={index}
-              day={day}
-              moodData={moodData}
-              isToday={day && isCurrentMonth && day === today.getDate()}
-              isMissed={isMissed}
-              hasEntry={hasEntry} // Explicitly pass hasEntry
-              isDarkMode={isDarkMode} // Pass isDarkMode for consistent styling
-            />
-          );
-        })}
+            return (
+              <CalendarTile
+                key={index}
+                day={day}
+                moodData={moodData}
+                isToday={day && isCurrentMonth && day === today.getDate()}
+                isMissed={isMissed}
+                hasEntry={hasEntry}
+                isDarkMode={isDarkMode}
+              />
+            );
+          })}
+        </div>
       </div>
     </div>
   );
