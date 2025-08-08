@@ -1,34 +1,32 @@
 import React, { useState, useEffect } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
 
 // Import components
 import Home from './pages/Home';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import Calendar from './pages/Calendar';
-import Profile from './pages/profile';
+import Profile from './pages/Profile';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import PinEntryScreen from './components/PinEntryScreen';
 
 function App() {
-  const [currentPage, setCurrentPage] = useState('home');
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 768);
+  const [isDarkMode, setIsDarkMode] = useState(true);
 
-  // Theme states
-  const [backgroundColor, setBackgroundColor] = useState('#F0F8FF'); // Alice Blue - a very soft, soothing light blue
-  const [backgroundImage, setBackgroundImage] = useState(''); // No default background image
+  // Theme state for background image only, set to theme1.jpg as default
+  const [backgroundImage, setBackgroundImage] = useState('src/utils/theme1.jpg');
 
   // New: Font state
-  const [selectedFont, setSelectedFont] = useState('font-nunito'); // Default font class
+  const [selectedFont, setSelectedFont] = useState('font-nunito');
 
   // App Lock states
   const [isAppLocked, setIsAppLocked] = useState(false);
   const [appPin, setAppPin] = useState('');
-  const [isAuthenticated, setIsAuthenticated] = useState(false); // True if PIN entered correctly
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // In-memory store for journal entries (temporary, will be replaced by Firestore)
-  const [journalEntries, setJournalEntries] = useState([]); // This is the correct declaration and should not cause errors.
+  // In-memory store for journal entries
+  const [journalEntries, setJournalEntries] = useState([]);
 
   // Load app lock settings and font from localStorage on initial render
   useEffect(() => {
@@ -39,14 +37,14 @@ function App() {
     if (storedLockStatus === 'true' && storedAppPin) {
       setIsAppLocked(true);
       setAppPin(storedAppPin);
-      setIsAuthenticated(false); // App starts locked, needs authentication
+      setIsAuthenticated(false);
     } else {
       setIsAppLocked(false);
-      setIsAuthenticated(true); // App starts unlocked
+      setIsAuthenticated(true);
     }
 
     if (storedFont) {
-      setSelectedFont(storedFont); // Apply stored font
+      setSelectedFont(storedFont);
     }
   }, []);
 
@@ -61,40 +59,21 @@ function App() {
 
   // Effect to apply selected font class to body
   useEffect(() => {
-    // Remove previous font classes
     document.documentElement.classList.forEach(cls => {
       if (cls.startsWith('font-')) {
         document.documentElement.classList.remove(cls);
       }
     });
-    // Add the new selected font class
     document.documentElement.classList.add(selectedFont);
-    localStorage.setItem('selectedFont', selectedFont); // Persist font choice
+    localStorage.setItem('selectedFont', selectedFont);
   }, [selectedFont]);
-
-
-  // Effect to handle window resize for initial sidebar state
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth >= 768) {
-        setSidebarOpen(true);
-      } else {
-        setSidebarOpen(false);
-      }
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   // Function to add a new journal entry
   const addJournalEntry = (newEntry) => {
     const today = new Date().toISOString().slice(0, 10);
-    // This line uses journalEntries
     const existingEntryIndex = journalEntries.findIndex(entry => entry.date === today);
 
     if (existingEntryIndex !== -1) {
-      // This line uses setJournalEntries
       setJournalEntries(prevEntries => {
         const updatedEntries = [...prevEntries];
         updatedEntries[existingEntryIndex] = {
@@ -104,7 +83,6 @@ function App() {
         return updatedEntries;
       });
     } else {
-      // This line also uses setJournalEntries
       setJournalEntries((prevEntries) => [
         ...prevEntries,
         {
@@ -115,35 +93,14 @@ function App() {
     }
   };
 
-  // Function to navigate between pages
-  const navigateTo = (page) => {
-    console.log(`Navigating to: ${page}`); // DEBUG: Log the page being navigated to
-    setCurrentPage(page);
-    if (window.innerWidth < 768) {
-      setSidebarOpen(false);
-    }
-  };
-
-  // Function to toggle dark mode (defined in App.jsx)
+  // Function to toggle dark mode
   const toggleDarkMode = () => {
     setIsDarkMode((prevMode) => !prevMode);
   };
 
-  // Function to toggle sidebar (defined in App.jsx)
-  const toggleSidebar = () => {
-    setSidebarOpen((prevOpen) => !prevOpen);
-  };
-
-  // Handle background color change
-  const handleBackgroundColorChange = (color) => {
-    setBackgroundColor(color);
-    setBackgroundImage(''); // Clear image if color is set
-  };
-
-  // Handle background image change
-  const handleBackgroundImageChange = (url) => {
+  // Handle background theme change (images or custom upload)
+  const onBackgroundImageChange = (url) => {
     setBackgroundImage(url);
-    setBackgroundColor(''); // Clear color if image is set
   };
 
   // Handle successful PIN entry
@@ -151,25 +108,6 @@ function App() {
     setIsAuthenticated(true);
   };
 
-  // Determine header title based on current page
-  const getHeaderTitle = () => {
-    switch (currentPage) {
-      case 'home':
-        return "Today's Journal";
-      case 'calendar':
-        return "Mood Calendar";
-      case 'reports':
-        return "Reports & Summaries";
-      case 'settings':
-        return "Settings";
-      case 'profile':
-        return "Your Profile";
-      default:
-        return "Lazy Journal";
-    }
-  };
-
-  // If app is locked and not authenticated, show PIN entry screen
   if (isAppLocked && !isAuthenticated) {
     return <PinEntryScreen expectedPin={appPin} onAuthenticate={handlePinAuthenticated} />;
   }
@@ -178,47 +116,47 @@ function App() {
     <div
       className="flex h-screen text-gray-900 dark:text-gray-100 transition-colors duration-300"
       style={{
-        backgroundColor: backgroundColor,
-        backgroundImage: backgroundImage ? `url(${backgroundImage})` : 'none',
+        backgroundImage: `url(${backgroundImage})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        backgroundAttachment: 'fixed', // Keeps background fixed when scrolling
+        backgroundAttachment: 'fixed',
       }}
     >
-      {/* Sidebar navigation */}
+      {/* The Sidebar component now uses the new, fixed mini-sidebar design */}
       <Sidebar
-        navigateTo={navigateTo}
-        currentPage={currentPage}
-        sidebarOpen={sidebarOpen}
-        toggleSidebar={toggleSidebar}
+        isDarkMode={isDarkMode}
+        toggleDarkMode={toggleDarkMode}
       />
-
-      {/* Main content area */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header toggleSidebar={toggleSidebar} title={getHeaderTitle()} />
-
+      
+      {/* Main content area, pushed to the right by the sidebar's width */}
+      <div className="flex-1 flex flex-col overflow-hidden md:pl-16">
+        <Header />
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
-          {currentPage === 'home' && <Home addJournalEntry={addJournalEntry} isDarkMode={isDarkMode} />}
-          {currentPage === 'calendar' && <Calendar journalEntries={journalEntries} isDarkMode={isDarkMode} />}
-          {currentPage === 'profile' && <Profile />}
-          {currentPage === 'reports' && <Reports journalEntries={journalEntries} isDarkMode={isDarkMode} />}
-          {currentPage === 'settings' && (
-            <Settings
-              isDarkMode={isDarkMode}
-              toggleDarkMode={toggleDarkMode}
-              backgroundColor={backgroundColor}
-              onBackgroundColorChange={handleBackgroundColorChange}
-              backgroundImage={backgroundImage}
-              onBackgroundImageChange={handleBackgroundImageChange}
-              isAppLocked={isAppLocked}
-              appPin={appPin}
-              setIsAppLocked={setIsAppLocked}
-              setAppPin={setAppPin}
-              setIsAuthenticated={setIsAuthenticated}
-              selectedFont={selectedFont}
-              setSelectedFont={setSelectedFont}
+          <Routes>
+            <Route path="/" element={<Navigate to="/home" />} />
+            <Route path="/home" element={<Home addJournalEntry={addJournalEntry} isDarkMode={isDarkMode} />} />
+            <Route path="/calendar" element={<Calendar journalEntries={journalEntries} isDarkMode={isDarkMode} />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/reports" element={<Reports journalEntries={journalEntries} isDarkMode={isDarkMode} />} />
+            <Route
+              path="/settings"
+              element={
+                <Settings
+                  isDarkMode={isDarkMode}
+                  toggleDarkMode={toggleDarkMode}
+                  backgroundImage={backgroundImage}
+                  onBackgroundImageChange={onBackgroundImageChange}
+                  isAppLocked={isAppLocked}
+                  appPin={appPin}
+                  setIsAppLocked={setIsAppLocked}
+                  setAppPin={setAppPin}
+                  setIsAuthenticated={setIsAuthenticated}
+                  selectedFont={selectedFont}
+                  setSelectedFont={setSelectedFont}
+                />
+              }
             />
-          )}
+          </Routes>
         </main>
       </div>
     </div>

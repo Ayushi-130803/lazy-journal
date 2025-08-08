@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import CalendarTile from '../components/calendartile';
+import CalendarTile from '../components/Calendartile';
 
 function Calendar({ journalEntries, isDarkMode }) {
   const [currentDate, setCurrentDate] = useState(new Date());

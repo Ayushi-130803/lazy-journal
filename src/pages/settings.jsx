@@ -1,58 +1,56 @@
 import React, { useState } from 'react';
-import { SunIcon, MoonIcon, PaintBrushIcon, PhotoIcon, BellAlertIcon, MusicalNoteIcon, KeyIcon, LockClosedIcon, LockOpenIcon } from '@heroicons/react/24/outline'; // Added Lock icons
+import {
+  Cog6ToothIcon,
+  MoonIcon,
+  SunIcon,
+  LockClosedIcon,
+  LockOpenIcon,
+  CheckBadgeIcon,
+  XCircleIcon,
+  SwatchIcon,
+  PencilSquareIcon,
+} from '@heroicons/react/24/outline';
+
+const themeImages = [
+  'src/utils/theme1.jpg',
+  'src/utils/theme2.jpg',
+  'src/utils/theme3.jpg'
+];
 
 function Settings({
-  isDarkMode, toggleDarkMode, backgroundImage, onBackgroundImageChange,
-  isAppLocked, appPin, setIsAppLocked, setAppPin, setIsAuthenticated // New App Lock props
+  isDarkMode,
+  toggleDarkMode,
+  backgroundImage,
+  onBackgroundImageChange,
+  isAppLocked,
+  appPin,
+  setIsAppLocked,
+  setAppPin,
+  setIsAuthenticated,
+  selectedFont,
+  setSelectedFont,
 }) {
-  // Local state for notification sound and reminder duration (can be synced with Profile later if needed)
-  const [notificationSound, setNotificationSound] = useState('chime');
-  const [reminderDuration, setReminderDuration] = useState('1hour');
+  const [isPinSetup, setIsPinSetup] = useState(!!appPin);
   const [newPin, setNewPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [pinError, setPinError] = useState('');
+  const [pinSuccess, setPinSuccess] = useState('');
 
-  // Handle background image upload
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      onBackgroundImageChange(imageUrl);
-    }
-  };
-
-  // Handle password change (placeholder)
-  const handleChangePassword = () => {
-    alert('Password change functionality not yet implemented.');
-    // In a real app, this would involve backend calls
-  };
-
-  // Handle App Lock toggle
-  const handleAppLockToggle = () => {
-    if (isAppLocked) {
-      // If currently locked, unlocking it
-      setIsAppLocked(false);
-      localStorage.setItem('isAppLocked', 'false');
-      setIsAuthenticated(true); // Automatically authenticate when unlocked from settings
-      alert('App lock disabled.'); // IMPORTANT: Replace with custom modal
-    } else {
-      // If currently unlocked, enabling it
-      if (appPin) { // Only enable if a PIN is already set
-        setIsAppLocked(true);
-        localStorage.setItem('isAppLocked', 'true');
-        setIsAuthenticated(false); // Require authentication next time
-        alert('App lock enabled.'); // IMPORTANT: Replace with custom modal
-      } else {
-        alert('Please set a PIN first before enabling app lock.'); // IMPORTANT: Replace with custom modal
-      }
-    }
-  };
-
-  // Handle setting/changing PIN
-  const handleSetPin = () => {
+  const handlePinChange = (e) => {
+    setNewPin(e.target.value);
     setPinError('');
-    if (newPin.length !== 4 || !/^\d+$/.test(newPin)) {
-      setPinError('PIN must be exactly 4 digits.');
+    setPinSuccess('');
+  };
+
+  const handleConfirmPinChange = (e) => {
+    setConfirmPin(e.target.value);
+    setPinError('');
+    setPinSuccess('');
+  };
+
+  const handlePinSubmit = () => {
+    if (newPin.length !== 4 || isNaN(newPin)) {
+      setPinError('PIN must be a 4-digit number.');
       return;
     }
     if (newPin !== confirmPin) {
@@ -62,250 +60,235 @@ function Settings({
 
     setAppPin(newPin);
     localStorage.setItem('appPin', newPin);
+    setIsPinSetup(true);
+    setPinSuccess('PIN set successfully!');
     setNewPin('');
     setConfirmPin('');
-    alert('PIN set successfully!'); // IMPORTANT: Replace with custom modal
   };
 
-  // Handle reset to defaults
-  const handleResetDefaults = () => {
-    onBackgroundImageChange(''); // Clear background image
-    toggleDarkMode(false); // Use the passed toggleDarkMode function to reset to light mode
-    setNotificationSound('chime');
-    setReminderDuration('1hour');
-    // Also reset app lock settings
-    setIsAppLocked(false);
+  const handleRemovePin = () => {
     setAppPin('');
-    setIsAuthenticated(true); // Ensure app is unlocked after reset
-    localStorage.removeItem('isAppLocked');
     localStorage.removeItem('appPin');
-    alert('Settings reset to defaults!'); // IMPORTANT: Replace with custom modal
+    setIsPinSetup(false);
+    setIsAppLocked(false);
+    setIsAuthenticated(true);
+    setPinSuccess('PIN removed successfully!');
   };
+
+  const handleLockToggle = () => {
+    if (isPinSetup) {
+      setIsAppLocked(!isAppLocked);
+      localStorage.setItem('isAppLocked', !isAppLocked);
+      // If locking the app, de-authenticate the user to force PIN entry
+      if (!isAppLocked) {
+        setIsAuthenticated(false);
+      }
+      setPinSuccess(`App lock ${isAppLocked ? 'disabled' : 'enabled'}!`);
+    } else {
+      setPinError('Please set a PIN first.');
+    }
+  };
+
+  // Handle custom image upload
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const imageUrl = URL.createObjectURL(file);
+      onBackgroundImageChange(imageUrl);
+    }
+  };
+
+  const fonts = [
+    { name: 'Nunito', class: 'font-nunito' },
+    { name: 'Lato', class: 'font-lato' },
+    { name: 'Open Sans', class: 'font-opensans' },
+    { name: 'Montserrat', class: 'font-montserrat' },
+    { name: 'Roboto', class: 'font-roboto' },
+    { name: 'Merriweather', class: 'font-merriweather' },
+  ];
 
   return (
-    <div className="max-w-3xl mx-auto p-6 bg-white/50 dark:bg-gray-800/50 backdrop-blur-md rounded-lg shadow-xl border border-gray-200/50 dark:border-gray-700/50 transition-colors duration-300">
-      <h2 className="text-3xl font-bold mb-6 text-center text-gray-800 dark:text-gray-200">
-        <span role="img" aria-label="settings icon" className="mr-2">
-          ⚙️
-        </span>
+    <div className="max-w-4xl mx-auto p-6 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 transition-colors duration-300">
+      <h2 className="text-3xl font-bold mb-8 text-center text-gray-800 dark:text-gray-200 flex items-center justify-center">
+        <Cog6ToothIcon className="h-8 w-8 mr-2 text-indigo-500" />
         Settings
       </h2>
 
-      <div className="space-y-8">
-        {/* Appearance Settings */}
-        <div className="bg-white/50 dark:bg-gray-700/50 p-5 rounded-lg shadow-md border border-gray-100/50 dark:border-gray-600/50">
-          <h3 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200 flex items-center">
-            <PaintBrushIcon className="h-6 w-6 mr-2 text-indigo-500" /> Appearance
-          </h3>
+      {/* Dark Mode Toggle */}
+      <div className="mb-8 p-6 bg-gray-50 dark:bg-gray-700 rounded-lg shadow-inner">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            {isDarkMode ? <MoonIcon className="h-7 w-7 text-yellow-400 mr-3" /> : <SunIcon className="h-7 w-7 text-indigo-500 mr-3" />}
+            <span className="text-xl font-semibold text-gray-800 dark:text-gray-200">Dark Mode</span>
+          </div>
+          <button
+            onClick={toggleDarkMode}
+            className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500
+              ${isDarkMode ? 'bg-indigo-600' : 'bg-gray-200'}`}
+          >
+            <span
+              className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform
+                ${isDarkMode ? 'translate-x-7' : 'translate-x-1'}`}
+            />
+          </button>
+        </div>
+      </div>
 
-          {/* Dark/Light Mode Toggle */}
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-gray-700 dark:text-gray-300">Dark Mode</span>
+      {/* Font Selection */}
+      <div className="mb-8 p-6 bg-gray-50 dark:bg-gray-700 rounded-lg shadow-inner">
+        <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center">
+          <PencilSquareIcon className="h-6 w-6 mr-2 text-blue-500" />
+          Font Style
+        </h3>
+        <div className="flex flex-wrap gap-2">
+          {fonts.map((font) => (
             <button
-              onClick={toggleDarkMode}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2
-                ${isDarkMode ? 'bg-indigo-600 focus:ring-indigo-500' : 'bg-gray-200 focus:ring-gray-500'}
-              `}
+              key={font.class}
+              onClick={() => setSelectedFont(font.class)}
+              className={`px-4 py-2 rounded-full font-medium transition-colors duration-200 text-sm
+                ${selectedFont === font.class
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500'}
+                ${font.class}`}
             >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200
-                  ${isDarkMode ? 'translate-x-6' : 'translate-x-1'}
-                `}
-              />
-              <span className="absolute left-1 top-1/2 -translate-y-1/2 text-xs">
-                {isDarkMode ? <MoonIcon className="h-4 w-4 text-gray-800" /> : <SunIcon className="h-4 w-4 text-gray-500" />}
-              </span>
+              {font.name}
             </button>
-          </div>
+          ))}
+        </div>
+      </div>
 
-          {/* Themes */}
-          <div>
-            <label htmlFor="backgroundImage" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Custom Theme
-            </label>
-            <div className="flex items-center space-x-3">
-              <input
-                type="file"
-                id="backgroundImage"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-indigo-800 dark:file:text-indigo-100 dark:hover:file:bg-indigo-700"
-              />
-              {backgroundImage && (
-                <img src={backgroundImage} alt="Background Preview" className="w-16 h-16 object-cover rounded-md shadow-sm" />
-              )}
-            </div>
-            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-              Upload an image to use as your app background. This will override the background color.
-            </p>
+      {/* Background Theme Section */}
+      <div className="mb-8 p-6 bg-gray-50 dark:bg-gray-700 rounded-lg shadow-inner">
+        <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center">
+          <SwatchIcon className="h-6 w-6 mr-2 text-teal-500" />
+          Background Theme
+        </h3>
+
+        {/* Background Image Options */}
+        <div>
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Choose a pre-set background</p>
+          <div className="flex flex-wrap gap-4">
+            {themeImages.map((imgUrl, index) => (
+              <button
+                key={index}
+                onClick={() => onBackgroundImageChange(imgUrl)}
+                className={`w-24 h-16 rounded-lg overflow-hidden shadow-md transition-transform transform hover:scale-105 border-2 ${
+                  backgroundImage === imgUrl
+                    ? 'border-indigo-500'
+                    : 'border-transparent hover:border-gray-400 dark:hover:border-gray-500'
+                }`}
+                title={`Theme Image ${index + 1}`}
+              >
+                <img
+                  src={imgUrl}
+                  alt={`Theme Image ${index + 1}`}
+                  className="w-full h-full object-cover"
+                />
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Notification Settings */}
-        <div className="bg-white/50 dark:bg-gray-700/50 p-5 rounded-lg shadow-md border border-gray-100/50 dark:border-gray-600/50">
-          <h3 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200 flex items-center">
-            <BellAlertIcon className="h-6 w-6 mr-2 text-green-500" /> Notification Settings
-          </h3>
-
-          {/* Reminder Duration */}
-          <div className="mb-4">
-            <label htmlFor="reminderDuration" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Reminder Duration (Remind me later)
-            </label>
-            <select
-              id="reminderDuration"
-              name="reminderDuration"
-              value={reminderDuration}
-              onChange={(e) => setReminderDuration(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
-            >
-              <option value="1hour">1 Hour</option>
-              <option value="2hours">2 Hours</option>
-              <option value="4hours">4 Hours</option>
-              <option value="tomorrow">Tomorrow Morning</option>
-            </select>
-          </div>
-
-          {/* Notification Sound Type */}
-          <div>
-            <label htmlFor="notificationSound" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              <MusicalNoteIcon className="inline-block h-5 w-5 mr-1 text-green-500" /> Notification Sound
-            </label>
-            <select
-              id="notificationSound"
-              name="notificationSound"
-              value={notificationSound}
-              onChange={(e) => setNotificationSound(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
-            >
-              <option value="chime">Gentle Chime</option>
-              <option value="bell">Soft Bell</option>
-              <option value="ping">Subtle Ping</option>
-              <option value="none">None</option>
-            </select>
+        {/* Custom Image Upload */}
+        <div className="mt-6">
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Or upload your own custom background</p>
+          <div className="flex items-center space-x-3">
+            <input
+              type="file"
+              id="backgroundImage"
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-indigo-800 dark:file:text-indigo-100 dark:hover:file:bg-indigo-700"
+            />
+            {backgroundImage && !themeImages.includes(backgroundImage) && (
+              <img src={backgroundImage} alt="Custom Background Preview" className="w-16 h-16 object-cover rounded-md shadow-sm" />
+            )}
           </div>
         </div>
+      </div>
 
-        {/* Account Settings */}
-        <div className="bg-white/50 dark:bg-gray-700/50 p-5 rounded-lg shadow-md border border-gray-100/50 dark:border-gray-600/50">
-          <h3 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200 flex items-center">
-            <KeyIcon className="h-6 w-6 mr-2 text-red-500" /> Account
-          </h3>
+      {/* App Lock Section */}
+      <div className="p-6 bg-gray-50 dark:bg-gray-700 rounded-lg shadow-inner">
+        <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center">
+          {isAppLocked ? <LockClosedIcon className="h-6 w-6 mr-2 text-red-500" /> : <LockOpenIcon className="h-6 w-6 mr-2 text-green-500" />}
+          App Lock
+        </h3>
 
-          {/* Change Password (Placeholder) */}
-          <div className="mb-4">
-            <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Current Password
-            </label>
-            <input
-              type="password"
-              id="currentPassword"
-              className="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
-              placeholder="Enter current password"
-            />
-          </div>
-          <div className="mb-4">
-            <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              New Password
-            </label>
-            <input
-              type="password"
-              id="newPassword"
-              className="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
-              placeholder="Enter new password"
-            />
-          </div>
-          <button
-            onClick={handleChangePassword}
-            className="px-6 py-2 bg-red-600 text-white font-semibold rounded-full shadow-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-all duration-200 transform hover:scale-105"
-          >
-            Change Password
-          </button>
-        </div>
+        {pinSuccess && (
+          <p className="mb-4 text-green-600 dark:text-green-400 flex items-center">
+            <CheckBadgeIcon className="h-5 w-5 mr-1" /> {pinSuccess}
+          </p>
+        )}
+        {pinError && (
+          <p className="mb-4 text-red-600 dark:text-red-400 flex items-center">
+            <XCircleIcon className="h-5 w-5 mr-1" /> {pinError}
+          </p>
+        )}
 
-        {/* New: Privacy & Security (App Lock) */}
-        <div className="bg-white/50 dark:bg-gray-700/50 p-5 rounded-lg shadow-md border border-gray-100/50 dark:border-gray-600/50">
-          <h3 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200 flex items-center">
-            <LockClosedIcon className="h-6 w-6 mr-2 text-purple-500" /> Privacy & Security
-          </h3>
-
-          {/* App Lock Toggle */}
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-gray-700 dark:text-gray-300">Enable App Lock</span>
-            <button
-              onClick={handleAppLockToggle}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2
-                ${isAppLocked ? 'bg-purple-600 focus:ring-purple-500' : 'bg-gray-200 focus:ring-gray-500'}
-              `}
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200
-                  ${isAppLocked ? 'translate-x-6' : 'translate-x-1'}
-                `}
-              />
-              <span className="absolute left-1 top-1/2 -translate-y-1/2 text-xs">
-                {isAppLocked ? <LockClosedIcon className="h-4 w-4 text-gray-800" /> : <LockOpenIcon className="h-4 w-4 text-gray-500" />}
-              </span>
-            </button>
-          </div>
-
-          {/* Set/Change PIN */}
-          <div className="mt-4">
-            <label htmlFor="newPin" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Set/Change 4-digit PIN
-            </label>
-            <input
-              type="password"
-              id="newPin"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              maxLength="4"
-              value={newPin}
-              onChange={(e) => {
-                const value = e.target.value;
-                if (/^\d*$/.test(value) && value.length <= 4) {
-                  setNewPin(value);
-                }
-              }}
-              className="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
-              placeholder="New PIN"
-            />
-          </div>
-          <div className="mt-2 mb-4">
-            <input
-              type="password"
-              id="confirmPin"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              maxLength="4"
-              value={confirmPin}
-              onChange={(e) => {
-                const value = e.target.value;
-                if (/^\d*$/.test(value) && value.length <= 4) {
-                  setConfirmPin(value);
-                }
-              }}
-              className="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
-              placeholder="Confirm PIN"
-            />
-            {pinError && <p className="text-red-600 text-sm mt-2">{pinError}</p>}
-          </div>
-          <button
-            onClick={handleSetPin}
-            className="px-6 py-2 bg-purple-600 text-white font-semibold rounded-full shadow-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-all duration-200 transform hover:scale-105"
-          >
-            Set PIN
-          </button>
-        </div>
-
-        {/* Reset to Defaults */}
-        <div className="text-center mt-8">
-          <button
-            onClick={handleResetDefaults}
-            className="px-6 py-2 bg-gray-300 text-gray-800 font-semibold rounded-full shadow-lg hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-all duration-200 transform hover:scale-105 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500"
-          >
-            Reset All Settings to Defaults
-          </button>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+          {!isPinSetup ? (
+            <>
+              <div className="flex-1 space-y-2">
+                <label htmlFor="new-pin" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Set a 4-digit PIN
+                </label>
+                <input
+                  type="password"
+                  id="new-pin"
+                  value={newPin}
+                  onChange={handlePinChange}
+                  maxLength="4"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm dark:bg-gray-600 dark:border-gray-500 dark:text-gray-200 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                />
+                <label htmlFor="confirm-pin" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Confirm PIN
+                </label>
+                <input
+                  type="password"
+                  id="confirm-pin"
+                  value={confirmPin}
+                  onChange={handleConfirmPinChange}
+                  maxLength="4"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm dark:bg-gray-600 dark:border-gray-500 dark:text-gray-200 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                />
+              </div>
+              <div className="md:ml-4">
+                <button
+                  onClick={handlePinSubmit}
+                  className="w-full md:w-auto px-4 py-2 bg-indigo-600 text-white font-semibold rounded-md shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
+                >
+                  Set PIN
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="text-gray-700 dark:text-gray-300">
+                PIN is set. App lock is currently{' '}
+                <span className={`font-semibold ${isAppLocked ? 'text-red-500' : 'text-green-500'}`}>
+                  {isAppLocked ? 'Enabled' : 'Disabled'}
+                </span>.
+              </p>
+              <div className="flex space-x-2">
+                <button
+                  onClick={handleLockToggle}
+                  className={`w-full md:w-auto px-4 py-2 font-semibold rounded-md shadow-md transition-colors
+                    ${isAppLocked
+                      ? 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500'
+                      : 'bg-green-600 text-white hover:bg-green-700 focus:ring-green-500'
+                    }`}
+                >
+                  {isAppLocked ? 'Disable Lock' : 'Enable Lock'}
+                </button>
+                <button
+                  onClick={handleRemovePin}
+                  className="w-full md:w-auto px-4 py-2 bg-gray-300 text-gray-800 font-semibold rounded-md shadow-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
+                >
+                  Remove PIN
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

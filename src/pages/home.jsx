@@ -1,7 +1,7 @@
 // src/pages/home.jsx
 
 import React, { useEffect, useState } from 'react';
-import JournalPage from './journal';
+import JournalPage from './Journal';
 
 function Home({ addJournalEntry, isDarkMode }) {
   const [hasEntry, setHasEntry] = useState(false);
