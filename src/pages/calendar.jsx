@@ -10,34 +10,59 @@ function Calendar({ journalEntries, isDarkMode }) {
   const firstDayOfMonth = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
 
+  // Helper function to map mood words to base colors, assuming a simple data structure
+  const getMoodColor = (moodWord) => {
+    switch (moodWord.toLowerCase()) {
+      case 'happy': return 'green';
+      case 'joyful': return 'green';
+      case 'excited': return 'green';
+      case 'sad': return 'red';
+      case 'down': return 'red';
+      case 'unhappy': return 'red';
+      case 'angry': return 'red';
+      case 'frustrated': return 'red';
+      case 'anxious': return 'orange';
+      case 'stressed': return 'orange';
+      case 'calm': return 'blue';
+      case 'peaceful': return 'blue';
+      case 'relaxed': return 'blue';
+      default: return 'gray';
+    }
+  };
+
   const entriesForMonth = journalEntries.reduce((acc, entry) => {
     const entryDate = new Date(entry.date);
     if (entryDate.getFullYear() === year && entryDate.getMonth() === month) {
       const day = entryDate.getDate();
-      const emotionalStateEntry = entry.entryDetails.find(detail => detail.promptId === 'emotionalState');
-      const moodValue = emotionalStateEntry ? emotionalStateEntry.moodValue : 50;
-      const moodText = emotionalStateEntry ? emotionalStateEntry.entryText : '';
+      
+      // Filter for all emotional state entries for this day
+      const emotionalStateEntries = entry.entryDetails.filter(detail => detail.promptId === 'emotionalState');
 
-      let moodCategory = 'neutral';
-      const lowerCaseText = moodText.toLowerCase();
+      if (emotionalStateEntries.length > 0) {
+        // Collect all mood data and calculate the total intensity
+        let totalIntensity = 0;
+        const moodsWithIntensity = emotionalStateEntries.map(detail => {
+          const moodValue = detail.moodValue || 50; // Use a default if not present
+          totalIntensity += moodValue;
+          return {
+            mood: detail.mood, // This should be the mood word (e.g., 'joyful')
+            intensity: moodValue
+          };
+        });
 
-      if (lowerCaseText.includes('happy') || lowerCaseText.includes('joy') || lowerCaseText.includes('great') || lowerCaseText.includes('good') || lowerCaseText.includes('excited')) {
-        moodCategory = 'happy';
-      } else if (lowerCaseText.includes('sad') || lowerCaseText.includes('down') || lowerCaseText.includes('unhappy') || lowerCaseText.includes('lonely')) {
-        moodCategory = 'sad';
-      } else if (lowerCaseText.includes('angry') || lowerCaseText.includes('frustrated') || lowerCaseText.includes('annoyed')) {
-        moodCategory = 'angry';
-      } else if (lowerCaseText.includes('calm') || lowerCaseText.includes('peaceful') || lowerCaseText.includes('relaxed')) {
-        moodCategory = 'calm';
-      } else if (lowerCaseText.includes('anxious') || lowerCaseText.includes('stressed') || lowerCaseText.includes('worried')) {
-        moodCategory = 'anxious';
+        // Calculate the percentage for each mood
+        const moodsWithPercentage = moodsWithIntensity.map(mood => ({
+          mood: mood.mood,
+          color: getMoodColor(mood.mood),
+          percentage: totalIntensity > 0 ? (mood.intensity / totalIntensity) * 100 : 0
+        }));
+
+        acc[day] = moodsWithPercentage;
       }
-
-      acc[day] = { mood: moodCategory, intensity: moodValue };
     }
     return acc;
   }, {});
-  
+
   const getMoodForDate = (day) => {
     return entriesForMonth[day] || null;
   };
@@ -106,14 +131,14 @@ function Calendar({ journalEntries, isDarkMode }) {
             const today = new Date();
             const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
             const isPastDay = day && isCurrentMonth && day < today.getDate();
-            const hasEntry = !!moodData;
+            const hasEntry = !!moodData && moodData.length > 0;
             const isMissed = day && isPastDay && !hasEntry;
 
             return (
               <CalendarTile
                 key={index}
                 day={day}
-                moodData={moodData}
+                moodData={moodData} // This is now an array of moods and percentages
                 isToday={day && isCurrentMonth && day === today.getDate()}
                 isMissed={isMissed}
                 hasEntry={hasEntry}

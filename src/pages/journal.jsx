@@ -1,5 +1,3 @@
-// src/pages/journal.jsx
-
 import React, { useState, useEffect } from "react";
 import { promptsData } from "../data/prompts";
 import { initialMoodWords, getMoodBgColorClass, getMoodTextColorClass, tailwindColorOptions } from "../data/moodWords";
@@ -200,8 +198,6 @@ const JournalPage = ({ addJournalEntry, isDarkMode }) => {
 
   // --- Dynamic Class Definitions ---
   const cardClasses = isDarkMode ? "bg-gray-800/50" : "bg-white/50";
-  const headerClasses = isDarkMode ? "text-blue-400" : "text-blue-600";
-  const subheaderClasses = isDarkMode ? "text-gray-400" : "text-gray-600";
   const inputBgClasses = isDarkMode ? "bg-gray-900 text-gray-200 border-gray-700 placeholder-gray-500" : "bg-white text-gray-900 border-gray-300 placeholder-gray-400";
   const buttonBgClasses = isDarkMode ? "bg-gray-700 hover:bg-blue-600 text-gray-300" : "bg-gray-200 hover:bg-blue-600 text-gray-800";
   const addMoodButtonClasses = "px-4 py-2 rounded-full font-medium bg-gray-700 text-blue-400 hover:bg-blue-600 hover:text-white transition-colors duration-200 flex items-center justify-center";
@@ -210,13 +206,19 @@ const JournalPage = ({ addJournalEntry, isDarkMode }) => {
   return (
     <div className="max-w-4xl mx-auto font-sans">
       <header className="text-center my-8">
-        <h1 className={`text-4xl font-extrabold ${headerClasses}`}>Today's Journal</h1>
-        <p className={`mt-2 text-lg ${subheaderClasses}`}>Reflect on your day, one prompt at a time.</p>
+        <div className="inline-block p-4 rounded-xl shadow-lg bg-gradient-to-r from-transparent via-pink-400 via-purple-500 to-transparent">
+          <h1 className={`text-4xl font-extrabold text-white`}>
+            Today's Journal
+          </h1>
+        </div>
+        <p className={`p-2 rounded-xl shadow-md bg-gradient-to-r from-transparent via-teal-200 to-transparent text-lg text-gray-800 font-medium`}>
+          Reflect on your day, one prompt at a time.
+        </p>
       </header>
 
       {/* Mood Card Section */}
       <section className={`${cardClasses} backdrop-blur-md p-6 rounded-2xl shadow-xl mb-6 border border-gray-200/50 dark:border-gray-700/50 transform transition-all duration-300`}>
-        <h2 className={`text-2xl font-bold mb-4 ${headerClasses}`}>How are you feeling?</h2>
+        <h2 className={`text-2xl font-bold mb-4 ${isDarkMode ? "text-blue-400" : "text-blue-600"}`}>How are you feeling?</h2>
 
         {/* Display selected mood words with their sliders */}
         <div className="space-y-4 mb-4">
@@ -232,7 +234,7 @@ const JournalPage = ({ addJournalEntry, isDarkMode }) => {
               >
                 <span
                   className={`px-4 py-1.5 rounded-full border border-white font-semibold text-sm
-                                ${bgClass} ${textClass}`}
+                              ${bgClass} ${textClass}`}
                 >
                   {mood.word}
                 </span>
