@@ -1,39 +1,69 @@
 import React from 'react';
 
-const CalendarTile = ({ day, moodData, isToday, hasEntry, isMissed, isDarkMode }) => {
-  const getMoodColorClass = () => {
-    if (!moodData) return '';
-    switch (moodData.mood) {
-      case 'happy':
-        return isDarkMode ? 'bg-green-600' : 'bg-green-400';
-      case 'sad':
-        return isDarkMode ? 'bg-red-600' : 'bg-red-400';
-      case 'angry':
-        return isDarkMode ? 'bg-red-800' : 'bg-red-600';
-      case 'calm':
-        return isDarkMode ? 'bg-blue-600' : 'bg-blue-400';
-      case 'anxious':
-        return isDarkMode ? 'bg-yellow-600' : 'bg-yellow-400';
-      default:
-        return isDarkMode ? 'bg-gray-500' : 'bg-gray-300';
+function CalendarTile({ day, moodData, isToday, isMissed, hasEntry, isDarkMode }) {
+  const baseBgClass = isDarkMode ? 'bg-gray-800' : 'bg-gray-200';
+  const emptyTileBgClass = 'bg-transparent';
+
+  let moodBgClass = '';
+  let moodTextColorClass = '';
+  let moodIndicator = null;
+
+  if (hasEntry && moodData && moodData.percentage) {
+    // Dynamically set the opacity based on the percentage
+    const opacityClass = `/[${moodData.percentage}]`;
+
+    if (moodData.mood === 'happy') {
+      moodBgClass = `bg-green-600${opacityClass} dark:bg-green-700${opacityClass}`;
+      moodTextColorClass = 'text-white';
+      moodIndicator = <div className="flex justify-center mt-1">
+        <span className={`h-2 w-2 rounded-full bg-green-300 mx-0.5${opacityClass}`}></span>
+      </div>;
+    } else if (moodData.mood === 'sad') {
+      moodBgClass = `bg-blue-600${opacityClass} dark:bg-blue-700${opacityClass}`;
+      moodTextColorClass = 'text-white';
+      moodIndicator = <div className="flex justify-center mt-1">
+        <span className={`h-2 w-2 rounded-full bg-blue-300 mx-0.5${opacityClass}`}></span>
+      </div>;
+    } else if (moodData.mood === 'angry') {
+      moodBgClass = `bg-red-600${opacityClass} dark:bg-red-700${opacityClass}`;
+      moodTextColorClass = 'text-white';
+      moodIndicator = <div className="flex justify-center mt-1">
+        <span className={`h-2 w-2 rounded-full bg-red-300 mx-0.5${opacityClass}`}></span>
+      </div>;
+    } else {
+      moodBgClass = `bg-gray-500${opacityClass} dark:bg-gray-600${opacityClass}`;
+      moodTextColorClass = 'text-white';
+      moodIndicator = <div className="flex justify-center mt-1">
+        <span className={`h-2 w-2 rounded-full bg-gray-300 mx-0.5${opacityClass}`}></span>
+      </div>;
     }
-  };
+  }
 
   const tileClasses = `
-    w-full h-16 rounded-md flex flex-col justify-center items-center text-xs font-medium relative transition-colors duration-200
-    ${day ? '' : 'invisible'}
-    ${isToday ? (isDarkMode ? 'bg-blue-600 text-white' : 'bg-blue-400 text-white') : ''}
-    ${hasEntry && !isToday ? getMoodColorClass() + ' text-white' : ''}
-    ${isMissed ? 'border-2 border-red-500' : ''}
-    ${hasEntry && !isToday ? 'hover:scale-105 transform' : ''}
-    ${!isToday && !hasEntry ? (isDarkMode ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' : 'bg-gray-100 hover:bg-gray-200 text-gray-800') : ''}
+    relative
+    flex flex-col items-center justify-center
+    p-1
+    rounded-lg
+    aspect-square
+    transition-all duration-300
+    ${day ? 'cursor-pointer' : 'pointer-events-none'}
+    ${day ? (hasEntry ? moodBgClass : `${baseBgClass}/50 backdrop-blur-sm`) : emptyTileBgClass}
+    ${day ? (hasEntry ? moodTextColorClass : isDarkMode ? 'text-white' : 'text-gray-800') : 'text-transparent'}
+    ${isToday ? 'border-2 border-indigo-500 ring-2 ring-indigo-500' : ''}
+    ${isMissed ? 'bg-red-900/30 text-red-300 border border-red-700' : ''}
+    ${day ? 'hover:scale-105 hover:shadow-lg' : ''}
   `;
 
   return (
     <div className={tileClasses}>
-      {day}
+      {day && (
+        <>
+          <span className="text-sm font-semibold">{day}</span>
+          {moodIndicator}
+        </>
+      )}
     </div>
   );
-};
+}
 
 export default CalendarTile;
