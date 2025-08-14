@@ -1,41 +1,63 @@
 import React from 'react';
+import { getMoodBgColorClass, getRgbValueFromTailwindClass } from '../data/moodWords';
 
-function CalendarTile({ day, moodData, isToday, isMissed, hasEntry, isDarkMode }) {
+function CalendarTile({ day, entry, isToday, isMissed, hasEntry, isDarkMode, onTileClick }) { // REINSTATED: isMissed prop
   const baseBgClass = isDarkMode ? 'bg-gray-800' : 'bg-gray-200';
   const emptyTileBgClass = 'bg-transparent';
 
-  let moodBgClass = '';
-  let moodTextColorClass = '';
   let moodIndicator = null;
+  let tileBgStyle = {};
 
-  if (hasEntry && moodData && moodData.percentage) {
-    // Dynamically set the opacity based on the percentage
-    const opacityClass = `/[${moodData.percentage}]`;
+  if (hasEntry && entry?.moods && Array.isArray(entry.moods) && entry.moods.length > 0) {
+    const moods = [...entry.moods];
+    moods.sort((a, b) => (b.intensity || 0) - (a.intensity || 0));
 
-    if (moodData.mood === 'happy') {
-      moodBgClass = `bg-green-600${opacityClass} dark:bg-green-700${opacityClass}`;
-      moodTextColorClass = 'text-white';
-      moodIndicator = <div className="flex justify-center mt-1">
-        <span className={`h-2 w-2 rounded-full bg-green-300 mx-0.5${opacityClass}`}></span>
-      </div>;
-    } else if (moodData.mood === 'sad') {
-      moodBgClass = `bg-blue-600${opacityClass} dark:bg-blue-700${opacityClass}`;
-      moodTextColorClass = 'text-white';
-      moodIndicator = <div className="flex justify-center mt-1">
-        <span className={`h-2 w-2 rounded-full bg-blue-300 mx-0.5${opacityClass}`}></span>
-      </div>;
-    } else if (moodData.mood === 'angry') {
-      moodBgClass = `bg-red-600${opacityClass} dark:bg-red-700${opacityClass}`;
-      moodTextColorClass = 'text-white';
-      moodIndicator = <div className="flex justify-center mt-1">
-        <span className={`h-2 w-2 rounded-full bg-red-300 mx-0.5${opacityClass}`}></span>
-      </div>;
-    } else {
-      moodBgClass = `bg-gray-500${opacityClass} dark:bg-gray-600${opacityClass}`;
-      moodTextColorClass = 'text-white';
-      moodIndicator = <div className="flex justify-center mt-1">
-        <span className={`h-2 w-2 rounded-full bg-gray-300 mx-0.5${opacityClass}`}></span>
-      </div>;
+    const totalIntensity = moods.reduce((sum, m) => sum + (m.intensity || 0), 0);
+
+    if (totalIntensity > 0) {
+      let gradientParts = [];
+      let currentPosition = 0;
+
+      moods.forEach((moodItem, index) => {
+        const baseColor = moodItem.mood?.baseColor || 'gray';
+        const intensity = moodItem.intensity || 1;
+
+        const proportion = intensity / totalIntensity;
+        const startShadeClass = getMoodBgColorClass(baseColor, 1);
+        const endShadeClass = getMoodBgColorClass(baseColor, 4);
+
+        const startRgb = getRgbValueFromTailwindClass(startShadeClass);
+        const endRgb = getRgbValueFromTailwindClass(endShadeClass);
+
+        const nextPosition = currentPosition + (proportion * 100);
+
+        if (index === 0) {
+            gradientParts.push(`rgb(${startRgb}) ${currentPosition}%`);
+        } else {
+            const prevMoodEndBaseColor = moods[index-1].mood?.baseColor || 'gray';
+            const prevMoodEndRgb = getRgbValueFromTailwindClass(getMoodBgColorClass(prevMoodEndBaseColor, 4));
+            gradientParts.push(`rgb(${prevMoodEndRgb}) ${currentPosition}%`);
+            gradientParts.push(`rgb(${startRgb}) ${currentPosition}%`);
+        }
+        
+        gradientParts.push(`rgb(${endRgb}) ${nextPosition}%`);
+
+        currentPosition = nextPosition;
+      });
+
+      tileBgStyle.background = `linear-gradient(to bottom right, ${gradientParts.join(', ')})`;
+
+      moodIndicator = (
+          <div className="flex justify-center flex-wrap mt-1 gap-0.5">
+              {moods.map((moodItem, idx) => (
+                  <span
+                      key={moodItem.mood?.id || idx}
+                      className={`h-2 w-2 rounded-full`}
+                      style={{ backgroundColor: `rgb(${getRgbValueFromTailwindClass(getMoodBgColorClass(moodItem.mood?.baseColor || 'gray', moodItem.intensity || 1))})` }}
+                  ></span>
+              ))}
+          </div>
+      );
     }
   }
 
@@ -47,15 +69,19 @@ function CalendarTile({ day, moodData, isToday, isMissed, hasEntry, isDarkMode }
     aspect-square
     transition-all duration-300
     ${day ? 'cursor-pointer' : 'pointer-events-none'}
-    ${day ? (hasEntry ? moodBgClass : `${baseBgClass}/50 backdrop-blur-sm`) : emptyTileBgClass}
-    ${day ? (hasEntry ? moodTextColorClass : isDarkMode ? 'text-white' : 'text-gray-800') : 'text-transparent'}
+    ${day && !hasEntry ? `${baseBgClass}/50 backdrop-blur-sm` : emptyTileBgClass}
+    ${day ? (isDarkMode ? 'dark:text-white' : 'text-gray-800') : 'text-transparent'}
     ${isToday ? 'border-2 border-indigo-500 ring-2 ring-indigo-500' : ''}
-    ${isMissed ? 'bg-red-900/30 text-red-300 border border-red-700' : ''}
+    ${isMissed ? 'bg-red-900/30 text-red-300 border border-red-700' : ''} {/* REINSTATED: isMissed styling */}
     ${day ? 'hover:scale-105 hover:shadow-lg' : ''}
   `;
 
   return (
-    <div className={tileClasses}>
+    <div
+      className={tileClasses}
+      onClick={() => day && hasEntry && onTileClick(day)}
+      style={hasEntry && entry?.moods && Array.isArray(entry.moods) && entry.moods.length > 0 ? tileBgStyle : {}}
+    >
       {day && (
         <>
           <span className="text-sm font-semibold">{day}</span>

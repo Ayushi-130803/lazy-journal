@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import Sidebar from './Sidebar';
-import Journal from './pages/journal';
-import Calendar from './pages/calendar';
-import Reports from './pages/reports';
-import Settings from './pages/settings';
-import Profile from './pages/profile';
+import Journal from './pages/Journal';
+import Calendar from './pages/Calendar';
+import Reports from './pages/Reports';
+import Settings from './pages/Settings';
+import Profile from './pages/Profile';
 
 function AppShell() {
   const [currentPage, setCurrentPage] = useState('home');

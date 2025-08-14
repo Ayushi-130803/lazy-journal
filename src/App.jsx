@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 
 // Import components
 import Home from './pages/Home';
@@ -11,28 +11,37 @@ import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import PinEntryScreen from './components/PinEntryScreen';
 
+// Helper function to get the local date string in YYYY-MM-DD format
+const getLocalDateString = (date = new Date()) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 function App() {
+  const navigate = useNavigate();
+
   const [isDarkMode, setIsDarkMode] = useState(true);
-
-  // Theme state for background image only, set to theme1.jpg as default
   const [backgroundImage, setBackgroundImage] = useState('src/utils/theme1.jpg');
-
-  // New: Font state
   const [selectedFont, setSelectedFont] = useState('font-nunito');
 
-  // App Lock states
   const [isAppLocked, setIsAppLocked] = useState(false);
   const [appPin, setAppPin] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // In-memory store for journal entries
   const [journalEntries, setJournalEntries] = useState([]);
+  const [entryToEdit, setEntryToEdit] = useState(null);
+  // NEW: State to hold the date selected in JournalPage's date picker
+  const [journalPageSelectedDate, setJournalPageSelectedDate] = useState(getLocalDateString());
 
-  // Load app lock settings and font from localStorage on initial render
+
   useEffect(() => {
+    console.log("App: Initial useEffect - Loading from localStorage");
     const storedLockStatus = localStorage.getItem('isAppLocked');
     const storedAppPin = localStorage.getItem('appPin');
     const storedFont = localStorage.getItem('selectedFont');
+    const storedJournalEntries = localStorage.getItem('journalEntries');
 
     if (storedLockStatus === 'true' && storedAppPin) {
       setIsAppLocked(true);
@@ -46,9 +55,33 @@ function App() {
     if (storedFont) {
       setSelectedFont(storedFont);
     }
+
+    if (storedJournalEntries) {
+      try {
+        const parsedEntries = JSON.parse(storedJournalEntries);
+        const sanitizedEntries = parsedEntries.map(entry => ({
+            ...entry,
+            entryDetails: Array.isArray(entry.entryDetails) ? entry.entryDetails : [],
+            moods: Array.isArray(entry.moods) ? entry.moods : []
+        }));
+        setJournalEntries(sanitizedEntries);
+        console.log("App: Loaded journal entries from localStorage:", sanitizedEntries);
+      } catch (e) {
+        console.error("App: Error parsing journal entries from localStorage:", e);
+        setJournalEntries([]);
+      }
+    } else {
+      console.log("App: No journal entries found in localStorage.");
+    }
   }, []);
 
-  // Effect to apply dark mode class to body
+  useEffect(() => {
+    if (journalEntries !== null) {
+      console.log("App: Saving journal entries to localStorage:", journalEntries);
+      localStorage.setItem('journalEntries', JSON.stringify(journalEntries));
+    }
+  }, [journalEntries]);
+
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
@@ -57,7 +90,6 @@ function App() {
     }
   }, [isDarkMode]);
 
-  // Effect to apply selected font class to body
   useEffect(() => {
     document.documentElement.classList.forEach(cls => {
       if (cls.startsWith('font-')) {
@@ -68,45 +100,76 @@ function App() {
     localStorage.setItem('selectedFont', selectedFont);
   }, [selectedFont]);
 
-  // Function to add a new journal entry
-  const addJournalEntry = (newEntry) => {
-    const today = new Date().toISOString().slice(0, 10);
-    const existingEntryIndex = journalEntries.findIndex(entry => entry.date === today);
+  const saveJournalEntry = useCallback((date, promptResponses, selectedMoods) => {
+    console.log("App: saveJournalEntry received promptResponses:", promptResponses);
+    console.log("App: saveJournalEntry received selectedMoods:", selectedMoods);
 
-    if (existingEntryIndex !== -1) {
-      setJournalEntries(prevEntries => {
-        const updatedEntries = [...prevEntries];
-        updatedEntries[existingEntryIndex] = {
-          date: today,
-          entryDetails: newEntry,
-        };
-        return updatedEntries;
-      });
-    } else {
-      setJournalEntries((prevEntries) => [
-        ...prevEntries,
-        {
-          date: today,
-          entryDetails: newEntry,
-        },
-      ]);
-    }
-  };
+    const newEntry = {
+      date: date,
+      entryDetails: promptResponses,
+      moods: selectedMoods,
+      timestamp: new Date().toISOString(),
+    };
+    console.log("App: saveJournalEntry final new entry data:", newEntry);
 
-  // Function to toggle dark mode
-  const toggleDarkMode = () => {
+    setJournalEntries(prevEntries => {
+      const existingEntryIndex = prevEntries.findIndex(entry => entry.date === date);
+      let updatedEntries;
+
+      if (existingEntryIndex !== -1) {
+        updatedEntries = [...prevEntries];
+        updatedEntries[existingEntryIndex] = newEntry;
+        console.log("App: Updated existing journal entry for", date);
+      } else {
+        updatedEntries = [...prevEntries, newEntry];
+        console.log("App: Added new journal entry for", date);
+      }
+      return updatedEntries;
+    });
+
+    setEntryToEdit(null); // Clear editing state after save
+    setJournalPageSelectedDate(date); // Keep the current date selected after saving
+    console.log("App: Cleared entryToEdit state. Set journalPageSelectedDate to:", date);
+  }, []);
+
+  // NEW: Function to delete a journal entry
+  const deleteJournalEntry = useCallback((dateToDelete) => {
+    console.log("App: deleteJournalEntry called for date:", dateToDelete);
+    setJournalEntries(prevEntries => {
+      const updatedEntries = prevEntries.filter(entry => entry.date !== dateToDelete);
+      console.log("App: Entries after deletion:", updatedEntries);
+      return updatedEntries;
+    });
+    setEntryToEdit(null); // Clear editing state
+    // No need to reset journalPageSelectedDate, as it should remain on the current (now blank) day
+    console.log("App: Cleared entryToEdit state after deletion.");
+  }, []);
+
+  const handleEditFromCalendar = useCallback((entry) => {
+    console.log("App: handleEditFromCalendar called for entry:", entry);
+    setEntryToEdit(entry);
+    setJournalPageSelectedDate(entry.date); // Set JournalPage's date to the edited entry's date
+    navigate('/home');
+  }, [navigate]);
+
+  // NEW: Callback for JournalPage to update its selected date
+  const handleJournalPageDateChange = useCallback((date) => {
+    console.log("App: handleJournalPageDateChange called, setting date:", date);
+    setJournalPageSelectedDate(date);
+    setEntryToEdit(null); // Always clear edit state when date changes manually in JournalPage
+  }, []);
+
+  const toggleDarkMode = useCallback(() => {
     setIsDarkMode((prevMode) => !prevMode);
-  };
+  }, []);
 
-  // Handle background theme change (images or custom upload)
-  const onBackgroundImageChange = (url) => {
+  const onBackgroundImageChange = useCallback((url) => {
     setBackgroundImage(url);
-  };
+  }, []);
 
-  // Handle successful PIN entry
-  const handlePinAuthenticated = () => {
+  const handlePinAuthenticated = useCallback(() => {
     setIsAuthenticated(true);
-  };
+  }, []);
 
   if (isAppLocked && !isAuthenticated) {
     return <PinEntryScreen expectedPin={appPin} onAuthenticate={handlePinAuthenticated} />;
@@ -122,22 +185,45 @@ function App() {
         backgroundAttachment: 'fixed',
       }}
     >
-      {/* The Sidebar component now uses the new, fixed mini-sidebar design */}
       <Sidebar
         isDarkMode={isDarkMode}
         toggleDarkMode={toggleDarkMode}
       />
-      
-      {/* Main content area, pushed to the right by the sidebar's width */}
+
       <div className="flex-1 flex flex-col overflow-hidden md:pl-16">
         <Header />
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
           <Routes>
             <Route path="/" element={<Navigate to="/home" />} />
-            <Route path="/home" element={<Home addJournalEntry={addJournalEntry} isDarkMode={isDarkMode} />} />
-            <Route path="/calendar" element={<Calendar journalEntries={journalEntries} isDarkMode={isDarkMode} />} />
+            <Route
+              path="/home"
+              element={
+                <Home
+                  saveJournalEntry={saveJournalEntry}
+                  deleteJournalEntry={deleteJournalEntry} // Pass delete function
+                  initialEntry={entryToEdit}
+                  setEntryToEdit={setEntryToEdit}
+                  isDarkMode={isDarkMode}
+                  journalEntries={journalEntries}
+                  getLocalDateString={getLocalDateString}
+                  journalPageSelectedDate={journalPageSelectedDate} // Pass selected date
+                  onJournalPageDateChange={handleJournalPageDateChange} // Pass date change handler
+                />
+              }
+            />
+            <Route
+              path="/calendar"
+              element={
+                <Calendar
+                  journalEntries={journalEntries}
+                  isDarkMode={isDarkMode}
+                  onEditEntry={handleEditFromCalendar}
+                  getLocalDateString={getLocalDateString}
+                />
+              }
+            />
             <Route path="/profile" element={<Profile />} />
-            <Route path="/reports" element={<Reports journalEntries={journalEntries} isDarkMode={isDarkMode} />} />
+            <Route path="/reports" element={<Reports journalEntries={journalEntries} isDarkMode={isDarkMode} getLocalDateString={getLocalDateString} />} />
             <Route
               path="/settings"
               element={

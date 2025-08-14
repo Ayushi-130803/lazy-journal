@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { promptsData } from "../data/prompts";
-import { initialMoodWords, getMoodBgColorClass, getMoodTextColorClass, tailwindColorOptions } from "../data/moodWords";
-import './journal.css'; // Custom CSS for the slider
+import { initialMoodWords, getMoodBgColorClass, getMoodTextColorClass, getRgbValueFromTailwindClass, tailwindColorOptions } from "../data/moodWords";
+import './journal.css';
 
-const JournalPage = ({ addJournalEntry, isDarkMode }) => {
+const JournalPage = ({ initialEntry, onSaveEntry, onCancelEdit, isDarkMode, getLocalDateString }) => {
   const [responses, setResponses] = useState({});
   const [showSaved, setShowSaved] = useState(false);
   const [showSkipOptions, setShowSkipOptions] = useState({});
@@ -17,12 +17,18 @@ const JournalPage = ({ addJournalEntry, isDarkMode }) => {
   const [newMoodWord, setNewMoodWord] = useState('');
   const [newMoodColor, setNewMoodColor] = useState('');
   const [addMoodError, setAddMoodError] = useState('');
-  
+
   // --- Load Mood Words from LocalStorage on Mount ---
   useEffect(() => {
+    console.log("JournalPage: Loading mood words from localStorage.");
     const storedMoodWords = localStorage.getItem('journalAppMoodWords');
     if (storedMoodWords) {
-      setMoodWords(JSON.parse(storedMoodWords));
+      try {
+        setMoodWords(JSON.parse(storedMoodWords));
+      } catch (e) {
+        console.error("JournalPage: Error parsing mood words from localStorage:", e);
+        setMoodWords(initialMoodWords);
+      }
     } else {
       setMoodWords(initialMoodWords);
       localStorage.setItem('journalAppMoodWords', JSON.stringify(initialMoodWords));
@@ -31,38 +37,57 @@ const JournalPage = ({ addJournalEntry, isDarkMode }) => {
 
   // --- Auto-update selected moods when moodWords changes ---
   useEffect(() => {
-    if (selectedMoods.length > 0) {
+    if (moodWords.length > 0 && selectedMoods.length > 0) {
+      console.log("JournalPage: Updating selected moods based on moodWords change.");
       const updatedSelectedMoods = selectedMoods.map(selected => {
-        const matchingMood = moodWords.find(mw => mw.id === selected.mood.id);
+        const matchingMood = moodWords.find(mw => mw.id === selected.mood?.id);
         if (matchingMood) {
           return { ...selected, mood: matchingMood };
         }
-        return selected;
-      });
-      setSelectedMoods(updatedSelectedMoods);
+        return null;
+      }).filter(Boolean);
+
+      if (JSON.stringify(updatedSelectedMoods) !== JSON.stringify(selectedMoods)) {
+        setSelectedMoods(updatedSelectedMoods);
+      }
     }
-  }, [moodWords]);
+  }, [moodWords, selectedMoods.length]);
+
+
+  // --- Populate form if initialEntry is provided (for editing) ---
+  useEffect(() => {
+    console.log("JournalPage: initialEntry effect triggered. initialEntry:", initialEntry);
+    if (initialEntry) {
+      const initialResponses = {};
+      if (Array.isArray(initialEntry.entryDetails)) {
+        initialEntry.entryDetails.forEach(detail => {
+          initialResponses[detail.promptId] = detail.entryText;
+        });
+      }
+      setResponses(initialResponses);
+      console.log("JournalPage: Populated responses for editing:", initialResponses);
+
+      setSelectedMoods(Array.isArray(initialEntry.moods) ? initialEntry.moods : []);
+      console.log("JournalPage: Populated selected moods for editing:", initialEntry.moods);
+    } else {
+      setResponses({});
+      setSelectedMoods([]);
+      console.log("JournalPage: Cleared form state (new entry or edit complete).");
+    }
+  }, [initialEntry]);
+
 
   // --- Handlers for Journal Prompts ---
   const handleInputChange = (id, value) => {
-    if (responses[id] && responses[id].startsWith("[Skipped]")) {
-      setResponses((prev) => ({ ...prev, [id]: value }));
-      setShowSkipOptions((prev) => ({ ...prev, [id]: false }));
-    } else {
-      setResponses((prev) => ({ ...prev, [id]: value }));
-    }
+    setResponses((prev) => ({ ...prev, [id]: value }));
+    setShowSkipOptions((prev) => ({ ...prev, [id]: false }));
   };
 
   const handleSuggestionClick = (id, word) => {
-    if (responses[id] && responses[id].startsWith("[Skipped]")) {
-      setResponses((prev) => ({ ...prev, [id]: word }));
-      setShowSkipOptions((prev) => ({ ...prev, [id]: false }));
-    } else {
-      setResponses((prev) => ({
-        ...prev,
-        [id]: prev[id] ? `${prev[id]}; ${word}` : word,
-      }));
-    }
+    setResponses((prev) => ({
+      ...prev,
+      [id]: prev[id] ? `${prev[id]}; ${word}` : word,
+    }));
   };
 
   const handleClearInput = (id) => {
@@ -79,22 +104,21 @@ const JournalPage = ({ addJournalEntry, isDarkMode }) => {
   };
 
   const handleSaveEntry = () => {
-    const newEntryDetails = Object.keys(responses).map(promptId => {
-      if (promptId === 'emotionalState') {
-        return {
-          promptId,
-          entryText: responses[promptId],
-          moodValue: selectedMoods.length > 0 ? selectedMoods[0].intensity : 50,
-          mood: selectedMoods.length > 0 ? selectedMoods[0].mood.word : 'Neutral',
-        };
-      }
-      return {
-        promptId,
-        entryText: responses[promptId],
-      };
-    });
+    const entryDate = initialEntry ? initialEntry.date : getLocalDateString();
 
-    addJournalEntry(newEntryDetails);
+    const promptResponses = promptsData.map(prompt => {
+        const responseText = responses[prompt.id] || '';
+        return {
+            promptId: prompt.id,
+            entryText: responseText.trim()
+        };
+    }).filter(detail => detail.entryText !== '');
+
+    console.log("JournalPage: preparing save - entryDate:", entryDate);
+    console.log("JournalPage: preparing save - promptResponses:", promptResponses);
+    console.log("JournalPage: preparing save - selectedMoods:", selectedMoods);
+
+    onSaveEntry(entryDate, promptResponses, selectedMoods);
 
     setShowSaved(true);
     setTimeout(() => {
@@ -103,11 +127,17 @@ const JournalPage = ({ addJournalEntry, isDarkMode }) => {
 
     setResponses({});
     setSelectedMoods([]);
+    console.log("JournalPage: Form state cleared after save.");
+
+    if (initialEntry && onCancelEdit) {
+      onCancelEdit();
+      console.log("JournalPage: Called onCancelEdit for an editing operation.");
+    }
   };
 
   // --- Handlers for Mood Card ---
   const handleMoodWordClick = (mood) => {
-    const isAlreadySelected = selectedMoods.some(item => item.mood.id === mood.id);
+    const isAlreadySelected = selectedMoods.some(item => item.mood?.id === mood.id);
     if (!isAlreadySelected) {
       setSelectedMoods(prev => [...prev, { mood: mood, intensity: 2 }]);
     }
@@ -117,13 +147,13 @@ const JournalPage = ({ addJournalEntry, isDarkMode }) => {
     const newIntensity = parseInt(e.target.value);
     setSelectedMoods(prev =>
       prev.map(item =>
-        item.mood.id === moodId ? { ...item, intensity: newIntensity } : item
+        item.mood?.id === moodId ? { ...item, intensity: newIntensity } : item
       )
     );
   };
 
   const handleRemoveSelectedMood = (moodId) => {
-    setSelectedMoods(prev => prev.filter(item => item.mood.id !== moodId));
+    setSelectedMoods(prev => prev.filter(item => item.mood?.id !== moodId));
   };
   
   // --- Handlers for Add/Edit Mood Word Modal ---
@@ -141,12 +171,22 @@ const JournalPage = ({ addJournalEntry, isDarkMode }) => {
     }
 
     const newId = newMoodWord.toLowerCase().replace(/\s/g, '-');
+    if (moodWords.some(mw => mw.id === newId)) {
+      setAddMoodError('Generated ID for this word conflicts. Please choose a different word.');
+      return;
+    }
+
+    if (!tailwindColorOptions.includes(newMoodColor.toLowerCase())) {
+        setAddMoodError('Please select a valid Tailwind CSS base color from the options.');
+        return;
+    }
+
     const updatedMoodWords = [
       ...moodWords,
       {
         id: newId,
         word: newMoodWord.trim(),
-        baseColor: newMoodColor.trim(),
+        baseColor: newMoodColor.trim().toLowerCase(),
       }
     ];
     setMoodWords(updatedMoodWords);
@@ -176,10 +216,15 @@ const JournalPage = ({ addJournalEntry, isDarkMode }) => {
       setAddMoodError('This mood word already exists.');
       return;
     }
+    
+    if (!tailwindColorOptions.includes(newMoodColor.toLowerCase())) {
+        setAddMoodError('Please select a valid Tailwind CSS base color from the options.');
+        return;
+    }
 
     const updatedMoodWords = moodWords.map(mw =>
       mw.id === editingMood.id
-        ? { ...mw, word: newMoodWord.trim(), baseColor: newMoodColor.trim() }
+        ? { ...mw, word: newMoodWord.trim(), baseColor: newMoodColor.trim().toLowerCase() }
         : mw
     );
 
@@ -203,15 +248,27 @@ const JournalPage = ({ addJournalEntry, isDarkMode }) => {
   const addMoodButtonClasses = "px-4 py-2 rounded-full font-medium bg-gray-700 text-blue-400 hover:bg-blue-600 hover:text-white transition-colors duration-200 flex items-center justify-center";
   const modalCardClasses = isDarkMode ? "bg-gray-800/75" : "bg-white/75";
 
+  // New dynamic header background classes
+  const mainHeaderBgClass = isDarkMode
+    ? "from-transparent via-purple-700 via-pink-600 to-transparent" // Darker, richer tones for dark mode
+    : "from-transparent via-pink-400 via-purple-500 to-transparent"; // Cheery, brighter tones for light mode
+
+  const subHeaderBgClass = isDarkMode
+    ? "from-transparent via-teal-700 to-transparent text-gray-200" // Darker teal for dark mode
+    : "from-transparent via-teal-200 to-transparent text-gray-800"; // Brighter teal for light mode
+
+
   return (
     <div className="max-w-4xl mx-auto font-sans">
       <header className="text-center my-8">
-        <div className="inline-block p-4 rounded-xl shadow-lg bg-gradient-to-r from-transparent via-pink-400 via-purple-500 to-transparent">
+        {/* Main Header */}
+        <div className={`inline-block p-4 rounded-xl shadow-lg bg-gradient-to-r ${mainHeaderBgClass}`}>
           <h1 className={`text-4xl font-extrabold text-white`}>
-            Today's Journal
+            {initialEntry ? `Edit Entry for ${initialEntry.date}` : `Today's Journal`}
           </h1>
         </div>
-        <p className={`p-2 rounded-xl shadow-md bg-gradient-to-r from-transparent via-teal-200 to-transparent text-lg text-gray-800 font-medium`}>
+        {/* Sub-Header */}
+        <p className={`p-2 rounded-xl shadow-md bg-gradient-to-r ${subHeaderBgClass} text-lg font-medium`}>
           Reflect on your day, one prompt at a time.
         </p>
       </header>
@@ -224,34 +281,44 @@ const JournalPage = ({ addJournalEntry, isDarkMode }) => {
         <div className="space-y-4 mb-4">
           {selectedMoods.map((selectedMoodItem) => {
             const { mood, intensity } = selectedMoodItem;
-            const bgClass = getMoodBgColorClass(mood.baseColor, intensity);
-            const textClass = getMoodTextColorClass(mood.baseColor, intensity);
+            const baseColor = mood?.baseColor || 'gray';
+            const currentIntensity = intensity || 1;
+            
+            const bgClass = getMoodBgColorClass(baseColor, currentIntensity);
+            const textClass = getMoodTextColorClass(baseColor, currentIntensity);
 
             return (
               <div
-                key={mood.id}
+                key={mood?.id || Math.random()}
                 className="flex items-center gap-4 px-3 py-2 rounded-full"
               >
                 <span
                   className={`px-4 py-1.5 rounded-full border border-white font-semibold text-sm
-                              ${bgClass} ${textClass}`}
+                               ${bgClass} ${textClass}`}
                 >
-                  {mood.word}
+                  {mood?.word || 'Unknown Mood'}
                 </span>
 
                 <input
                   type="range"
                   min="1"
                   max="4"
-                  value={intensity}
-                  onChange={(e) => handleMoodIntensityChange(mood.id, e)}
+                  value={currentIntensity}
+                  onChange={(e) => handleMoodIntensityChange(mood?.id, e)}
                   className="custom-range-slider w-full h-2 rounded-lg appearance-none cursor-pointer"
+                  style={{
+                    background: `linear-gradient(to right,
+                      rgb(${getRgbValueFromTailwindClass(getMoodBgColorClass(baseColor, 1))}) 0%,
+                      rgb(${getRgbValueFromTailwindClass(getMoodBgColorClass(baseColor, 2))}) 33%,
+                      rgb(${getRgbValueFromTailwindClass(getMoodBgColorClass(baseColor, 3))}) 66%,
+                      rgb(${getRgbValueFromTailwindClass(getMoodBgColorClass(baseColor, 4))}) 100%)`
+                  }}
                 />
 
                 <button
-                  onClick={() => handleRemoveSelectedMood(mood.id)}
+                  onClick={() => handleRemoveSelectedMood(mood?.id)}
                   className="p-1.5 text-gray-400 hover:text-white rounded-full hover:bg-gray-700 transition"
-                  aria-label={`Remove ${mood.word}`}
+                  aria-label={`Remove ${mood?.word || 'Unknown Mood'}`}
                 >
                   ✕
                 </button>
@@ -268,7 +335,7 @@ const JournalPage = ({ addJournalEntry, isDarkMode }) => {
                 className={`px-4 py-2 rounded-full font-medium transition-all duration-200
                           ${getMoodBgColorClass(mood.baseColor, 4)}
                           ${getMoodTextColorClass(mood.baseColor, 4)}
-                          ${selectedMoods.some(item => item.mood.id === mood.id) ? 'ring-2 ring-offset-2 ring-blue-400 ring-offset-gray-800' : ''}
+                          ${selectedMoods.some(item => item.mood?.id === mood.id) ? 'ring-2 ring-offset-2 ring-blue-400 ring-offset-gray-800' : ''}
                           hover:scale-105`}
               >
                 {mood.word}
