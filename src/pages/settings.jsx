@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   Cog6ToothIcon,
   MoonIcon,
@@ -9,12 +9,31 @@ import {
   XCircleIcon,
   SwatchIcon,
   PencilSquareIcon,
-  BellAlertIcon,
-  Bars4Icon,
-  RectangleStackIcon
 } from '@heroicons/react/24/outline';
-import * as Tone from 'tone';
 
+// Note: To make the fonts work throughout your app, you must perform two steps:
+// 1. Add the font link tags to your public/index.html file (e.g., from Google Fonts).
+//    <link rel="preconnect" href="https://fonts.googleapis.com">
+//    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+//    <link href="https://fonts.googleapis.com/css2?family=Lato&family=Merriweather&family=Montserrat&family=Nunito&family=Open+Sans&family=Roboto&display=swap" rel="stylesheet">
+//
+// 2. Extend your Tailwind CSS configuration to include these fonts.
+//    In your tailwind.config.js file, add the following to the `theme.extend` section:
+//    theme: {
+//      extend: {
+//        fontFamily: {
+//          nunito: ['Nunito', 'sans-serif'],
+//          lato: ['Lato', 'sans-serif'],
+//          opensans: ['"Open Sans"', 'sans-serif'],
+//          montserrat: ['Montserrat', 'sans-serif'],
+//          roboto: ['Roboto', 'sans-serif'],
+//          merriweather: ['Merriweather', 'serif'],
+//        }
+//      }
+//    }
+
+
+// Import local images from the assets folder. These paths are relative to the public folder.
 const themeImages = [
   'src/utils/theme1.jpg',
   'src/utils/theme2.jpg',
@@ -33,72 +52,12 @@ function Settings({
   setIsAuthenticated,
   selectedFont,
   setSelectedFont,
-  selectedView, // New prop for selected view
-  onViewChange // New prop for changing the view
 }) {
   const [isPinSetup, setIsPinSetup] = useState(!!appPin);
   const [newPin, setNewPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [pinError, setPinError] = useState('');
   const [pinSuccess, setPinSuccess] = useState('');
-  const [selectedNotificationSound, setSelectedNotificationSound] = useState(null);
-  const [customSoundUrl, setCustomSoundUrl] = useState(null);
-  const audioRef = useRef(null);
-
-  // Define preset sounds using Tone.js for web-based sound generation
-  const presetSounds = [
-    {
-      name: 'Default',
-      play: () => {
-        // Simple sine wave
-        const synth = new Tone.Synth().toDestination();
-        synth.triggerAttackRelease('C4', '8n');
-      }
-    },
-    {
-      name: 'Chime',
-      play: () => {
-        // A slightly more complex synth sound
-        const synth = new Tone.PolySynth(Tone.Synth, {
-          oscillator: { type: 'sine' },
-          envelope: {
-            attack: 0.005,
-            decay: 0.1,
-            sustain: 0.05,
-            release: 0.2
-          }
-        }).toDestination();
-        synth.triggerAttackRelease(['E5', 'G5'], '4n');
-      }
-    },
-    {
-      name: 'Pluck',
-      play: () => {
-        // A plucked string sound
-        const synth = new Tone.PluckSynth().toDestination();
-        synth.triggerAttack('G4');
-      }
-    },
-    {
-      name: 'Bell',
-      play: () => {
-        // A simple bell sound with a metal resonance effect
-        const bell = new Tone.MetalSynth({
-          frequency: 200,
-          envelope: {
-            attack: 0.001,
-            decay: 1.4,
-            release: 0.2
-          },
-          harmonicity: 5.1,
-          modulationIndex: 32,
-          resonance: 4000,
-          octaves: 1.5
-        }).toDestination();
-        bell.triggerAttack('C4');
-      }
-    }
-  ];
 
   const handlePinChange = (e) => {
     setNewPin(e.target.value);
@@ -162,38 +121,6 @@ function Settings({
     }
   };
 
-  // Handle custom audio upload
-  const handleAudioUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const audioUrl = URL.createObjectURL(file);
-      setCustomSoundUrl(audioUrl);
-      setSelectedNotificationSound({ name: 'Custom', url: audioUrl });
-      
-      // Play the newly uploaded custom sound immediately
-      if (audioRef.current) {
-        audioRef.current.src = audioUrl;
-        audioRef.current.play();
-      }
-    }
-  };
-
-  // Handle selection and playback of a sound
-  const handleSelectAndPlaySound = (sound) => {
-    setSelectedNotificationSound(sound);
-
-    if (sound.url) {
-      // If it's a custom sound from a URL
-      if (audioRef.current) {
-        audioRef.current.src = sound.url;
-        audioRef.current.play();
-      }
-    } else if (sound.play) {
-      // If it's a preset Tone.js sound
-      sound.play();
-    }
-  };
-  
   const fonts = [
     { name: 'Nunito', class: 'font-nunito' },
     { name: 'Lato', class: 'font-lato' },
@@ -201,12 +128,6 @@ function Settings({
     { name: 'Montserrat', class: 'font-montserrat' },
     { name: 'Roboto', class: 'font-roboto' },
     { name: 'Merriweather', class: 'font-merriweather' },
-  ];
-  
-  // Define journal view options
-  const viewOptions = [
-    { name: 'Card View', value: 'card', icon: <RectangleStackIcon className="h-5 w-5" /> },
-    { name: 'List View', value: 'list', icon: <Bars4Icon className="h-5 w-5" /> },
   ];
 
   return (
@@ -233,30 +154,6 @@ function Settings({
                 ${isDarkMode ? 'translate-x-7' : 'translate-x-1'}`}
             />
           </button>
-        </div>
-      </div>
-      
-      {/* Journal View Options */}
-      <div className="mb-8 p-6 bg-gray-50 dark:bg-gray-700 rounded-lg shadow-inner">
-        <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center">
-          <Bars4Icon className="h-6 w-6 mr-2 text-purple-500" />
-          Journal View
-        </h3>
-        <div className="flex flex-wrap gap-2">
-          {viewOptions.map((view) => (
-            <button
-              key={view.value}
-              onClick={() => onViewChange(view.value)}
-              className={`px-4 py-2 rounded-full font-medium transition-colors duration-200 text-sm flex items-center
-                ${selectedView === view.value
-                  ? 'bg-purple-600 text-white shadow-md'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500'}
-              `}
-            >
-              {view.icon}
-              <span className="ml-2">{view.name}</span>
-            </button>
-          ))}
         </div>
       </div>
 
@@ -328,58 +225,6 @@ function Settings({
             />
             {backgroundImage && !themeImages.includes(backgroundImage) && (
               <img src={backgroundImage} alt="Custom Background Preview" className="w-16 h-16 object-cover rounded-md shadow-sm" />
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Notification Sound Section */}
-      <div className="mb-8 p-6 bg-gray-50 dark:bg-gray-700 rounded-lg shadow-inner">
-        <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center">
-          <BellAlertIcon className="h-6 w-6 mr-2 text-indigo-500" />
-          Notification Sound
-        </h3>
-        
-        {/* Preset sound options */}
-        <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Choose a notification sound</p>
-        <div className="flex flex-wrap gap-2 mb-4">
-          {presetSounds.map((sound) => (
-            <button
-              key={sound.name}
-              onClick={() => handleSelectAndPlaySound(sound)}
-              className={`px-4 py-2 rounded-full font-medium transition-colors duration-200 text-sm
-                ${selectedNotificationSound?.name === sound.name
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500'}
-              `}
-            >
-              {sound.name}
-            </button>
-          ))}
-        </div>
-
-        {/* Custom sound upload */}
-        <div className="mt-6">
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Or upload your own custom sound</p>
-          <div className="flex items-center space-x-3">
-            <input
-              type="file"
-              id="notificationSound"
-              accept="audio/*"
-              onChange={handleAudioUpload}
-              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-indigo-800 dark:file:text-indigo-100 dark:hover:file:bg-indigo-700"
-            />
-            {customSoundUrl && (
-                <button
-                  onClick={() => handleSelectAndPlaySound({ name: 'Custom', url: customSoundUrl })}
-                  className={`px-4 py-2 rounded-full font-medium transition-colors duration-200 text-sm
-                    ${selectedNotificationSound?.name === 'Custom'
-                      ? 'bg-indigo-600 text-white shadow-md'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500'}
-                  `}
-                >
-                  Custom
-                </button>
             )}
           </div>
         </div>
@@ -469,8 +314,6 @@ function Settings({
           )}
         </div>
       </div>
-       {/* A hidden audio element to play custom uploaded sounds */}
-      <audio ref={audioRef} />
     </div>
   );
 }

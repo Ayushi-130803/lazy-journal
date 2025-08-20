@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
-// Import components
-import Home from './pages/Home';
+// Import the new Auth component and the old PinEntryScreen
+import Auth from './components/auth';
+import PinEntryScreen from './components/PinEntryScreen';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
+import Home from './pages/Home';
 import Calendar from './pages/Calendar';
 import Profile from './pages/Profile';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
-import PinEntryScreen from './components/PinEntryScreen';
+
 
 function App() {
   const [isDarkMode, setIsDarkMode] = useState(true);
@@ -23,24 +25,27 @@ function App() {
   // App Lock states
   const [isAppLocked, setIsAppLocked] = useState(false);
   const [appPin, setAppPin] = useState('');
+  
+  // State for user authentication. This is the key state for controlling access.
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  // In-memory store for journal entries
-  const [journalEntries, setJournalEntries] = useState([]);
+  
+  // State to hold user data after successful authentication
+  const [user, setUser] = useState(null);
 
   // Load app lock settings and font from localStorage on initial render
   useEffect(() => {
     const storedLockStatus = localStorage.getItem('isAppLocked');
     const storedAppPin = localStorage.getItem('appPin');
     const storedFont = localStorage.getItem('selectedFont');
-
+    
+    // Check if a PIN is set. If so, and the app is locked, require a PIN entry.
     if (storedLockStatus === 'true' && storedAppPin) {
       setIsAppLocked(true);
       setAppPin(storedAppPin);
       setIsAuthenticated(false);
     } else {
       setIsAppLocked(false);
-      setIsAuthenticated(true);
+      setIsAuthenticated(false); // User needs to log in via Auth component
     }
 
     if (storedFont) {
@@ -70,29 +75,11 @@ function App() {
 
   // Function to add a new journal entry
   const addJournalEntry = (newEntry) => {
-    const today = new Date().toISOString().slice(0, 10);
-    const existingEntryIndex = journalEntries.findIndex(entry => entry.date === today);
-
-    if (existingEntryIndex !== -1) {
-      setJournalEntries(prevEntries => {
-        const updatedEntries = [...prevEntries];
-        updatedEntries[existingEntryIndex] = {
-          date: today,
-          entryDetails: newEntry,
-        };
-        return updatedEntries;
-      });
-    } else {
-      setJournalEntries((prevEntries) => [
-        ...prevEntries,
-        {
-          date: today,
-          entryDetails: newEntry,
-        },
-      ]);
-    }
+    // Placeholder for adding an entry to the database
+    // For now, entries are not persistent across sessions
+    console.log("Adding new journal entry:", newEntry);
   };
-
+  
   // Function to toggle dark mode
   const toggleDarkMode = () => {
     setIsDarkMode((prevMode) => !prevMode);
@@ -103,15 +90,35 @@ function App() {
     setBackgroundImage(url);
   };
 
-  // Handle successful PIN entry
+  // Function to handle successful authentication from Auth component
+  const handleAuthSuccess = (userData) => {
+    setIsAuthenticated(true);
+    setUser(userData);
+  };
+  
+  // Function to handle successful PIN entry from PinEntryScreen
   const handlePinAuthenticated = () => {
     setIsAuthenticated(true);
   };
 
+  // Function to handle user logout
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setUser(null);
+  };
+
+  // Conditional rendering based on authentication state
   if (isAppLocked && !isAuthenticated) {
     return <PinEntryScreen expectedPin={appPin} onAuthenticate={handlePinAuthenticated} />;
   }
+  
+  if (!isAuthenticated) {
+    return (
+      <Auth onAuthSuccess={handleAuthSuccess} />
+    );
+  }
 
+  // Once authenticated, render the main application
   return (
     <div
       className="flex h-screen text-gray-900 dark:text-gray-100 transition-colors duration-300"
@@ -122,22 +129,21 @@ function App() {
         backgroundAttachment: 'fixed',
       }}
     >
-      {/* The Sidebar component now uses the new, fixed mini-sidebar design */}
       <Sidebar
         isDarkMode={isDarkMode}
         toggleDarkMode={toggleDarkMode}
+        handleLogout={handleLogout}
       />
       
-      {/* Main content area, pushed to the right by the sidebar's width */}
       <div className="flex-1 flex flex-col overflow-hidden md:pl-16">
         <Header />
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
           <Routes>
             <Route path="/" element={<Navigate to="/home" />} />
             <Route path="/home" element={<Home addJournalEntry={addJournalEntry} isDarkMode={isDarkMode} />} />
-            <Route path="/calendar" element={<Calendar journalEntries={journalEntries} isDarkMode={isDarkMode} />} />
+            <Route path="/calendar" element={<Calendar isDarkMode={isDarkMode} />} />
             <Route path="/profile" element={<Profile />} />
-            <Route path="/reports" element={<Reports journalEntries={journalEntries} isDarkMode={isDarkMode} />} />
+            <Route path="/reports" element={<Reports isDarkMode={isDarkMode} />} />
             <Route
               path="/settings"
               element={
