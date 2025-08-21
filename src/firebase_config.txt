@@ -1,0 +1,21 @@
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyCc8uSTc3Az1USy2yZsOnV0TgNCZIMtrbU",
+  authDomain: "lazy-journal-4dea2.firebaseapp.com",
+  projectId: "lazy-journal-4dea2",
+  storageBucket: "lazy-journal-4dea2.firebasestorage.app",
+  messagingSenderId: "846140539871",
+  appId: "1:846140539871:web:526d3ea9f7207795463a6a",
+  measurementId: "G-JGJSF05319"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
