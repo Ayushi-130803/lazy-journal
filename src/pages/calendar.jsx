@@ -130,8 +130,8 @@ function Calendar({ journalEntries, isDarkMode, onEditEntry }) {
                   <span
                     key={moodItem.mood?.id || index}
                     className={`px-3 py-1.5 rounded-full text-sm font-medium
-                               ${getMoodBgColorClass(moodItem.mood?.baseColor || 'gray', moodItem.intensity || 1)}
-                               ${getMoodTextColorClass(moodItem.mood?.baseColor || 'gray', moodItem.intensity || 1)}`}
+                                ${getMoodBgColorClass(moodItem.mood?.baseColor || 'gray', moodItem.intensity || 1)}
+                                ${getMoodTextColorClass(moodItem.mood?.baseColor || 'gray', moodItem.intensity || 1)}`}
                   >
                     {moodItem.mood?.word || 'Unknown Mood'}
                   </span>
@@ -139,7 +139,7 @@ function Calendar({ journalEntries, isDarkMode, onEditEntry }) {
               </div>
             </div>
           ) : (
-             <p className={`mb-6 italic ${textColorClass}`}>No mood recorded for this entry.</p>
+              <p className={`mb-6 italic ${textColorClass}`}>No mood recorded for this entry.</p>
           )}
 
 
@@ -169,21 +169,18 @@ function Calendar({ journalEntries, isDarkMode, onEditEntry }) {
   return (
     <div className="max-w-xl mx-auto font-sans">
       <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-md p-2 rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 min-h-[70vh] transition-all duration-300">
-        <h2 className="text-lg font-bold mb-2 text-center text-gray-800 dark:text-gray-200">
-          <span role="img" aria-label="calendar icon" className="mr-2">
-            📅
-          </span>
+        <h2 className="text-2xl font-bold mb-4 text-center text-gray-800 dark:text-gray-200">
           Mood Calendar
         </h2>
 
-        <div className="flex justify-between items-center mb-2">
+        <div className="flex justify-between items-center mb-4">
           <button
             onClick={goToPreviousMonth}
             className="p-1 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-gray-700 dark:text-gray-300"
           >
             &lt;
           </button>
-          <h3 className="text-base font-semibold text-gray-800 dark:text-gray-200">
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
             {getMonthName(currentDate)} {year}
           </h3>
           <button
@@ -196,7 +193,7 @@ function Calendar({ journalEntries, isDarkMode, onEditEntry }) {
 
         <div className="grid grid-cols-7 gap-1 mb-1">
           {dayNames.map((dayName) => (
-            <div key={dayName} className="text-center font-medium text-gray-600 dark:text-gray-400 text-xs">
+            <div key={dayName} className="text-center font-medium text-gray-600 dark:text-gray-400 text-sm">
               {dayName}
             </div>
           ))}

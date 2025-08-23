@@ -8,10 +8,9 @@ import {
   UserCircleIcon,
   SunIcon,
   MoonIcon,
-  ArrowLeftEndOnRectangleIcon // Import for logout icon
 } from '@heroicons/react/24/outline';
 
-function Sidebar({ toggleDarkMode, isDarkMode, handleSignOut }) {
+function Sidebar({ toggleDarkMode, isDarkMode }) {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -61,15 +60,6 @@ function Sidebar({ toggleDarkMode, isDarkMode, handleSignOut }) {
         title={isDarkMode ? 'Toggle Light Mode' : 'Toggle Dark Mode'}
       >
         {isDarkMode ? <MoonIcon className="h-6 w-6" /> : <SunIcon className="h-6 w-6" />}
-      </button>
-
-      {/* Sign Out button for Sidebar */}
-      <button
-        onClick={handleSignOut}
-        className="mt-4 p-2 rounded-lg transition-all duration-200 text-gray-500 dark:text-gray-400 hover:bg-red-100 dark:hover:bg-red-700 hover:text-red-600 dark:hover:text-red-300"
-        title="Sign Out"
-      >
-        <ArrowLeftEndOnRectangleIcon className="h-6 w-6" />
       </button>
     </div>
   );

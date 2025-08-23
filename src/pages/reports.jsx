@@ -275,10 +275,10 @@ function Reports({ journalEntries, isDarkMode, getLocalDateString }) { // Receiv
               <CartesianGrid strokeDasharray="3 3" stroke={isDarkMode ? "#4a4a4a" : "#e0e0e0"} />
               <XAxis dataKey="date" stroke={isDarkMode ? "#9ca3af" : "#6b7280"} />
               <YAxis domain={[0, 4]}
-                     ticks={[1, 2, 3, 4]}
-                     stroke={isDarkMode ? "#9ca3af" : "#6b7280"}
-                     label={{ value: 'Mood Intensity (1-4)', angle: -90, position: 'insideLeft', fill: isDarkMode ? '#9ca3af' : '#6b7280' }}
-                     />
+                  ticks={[1, 2, 3, 4]}
+                  stroke={isDarkMode ? "#9ca3af" : "#6b7280"}
+                  label={{ value: 'Mood Intensity (1-4)', angle: -90, position: 'insideLeft', fill: isDarkMode ? '#9ca3af' : '#6b7280' }}
+                  />
               <Tooltip
                 contentStyle={{ backgroundColor: isDarkMode ? '#374151' : '#fff', borderColor: isDarkMode ? '#4b5563' : '#e0e0e0', borderRadius: '8px' }}
                 labelStyle={{ color: isDarkMode ? '#d1d5db' : '#1f2937' }}
@@ -323,11 +323,8 @@ function Reports({ journalEntries, isDarkMode, getLocalDateString }) { // Receiv
 
 
   return (
-    <div className="max-w-5xl mx-auto p-4 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 transition-colors duration-300">
+    <div className="max-w-3xl mx-auto p-8 bg-white/50 dark:bg-gray-800/50 backdrop-blur-md rounded-xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 transition-colors duration-300">
       <h2 className="text-3xl font-bold mb-6 text-center text-gray-800 dark:text-gray-200">
-        <span role="img" aria-label="chart icon" className="mr-2">
-          📊
-        </span>
         Reports & Summaries
       </h2>
 

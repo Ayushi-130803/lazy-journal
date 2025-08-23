@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  Cog6ToothIcon,
   MoonIcon,
   SunIcon,
   LockClosedIcon,
@@ -14,7 +13,7 @@ import {
 const themeImages = [
   'src/utils/theme1.jpg',
   'src/utils/theme2.jpg',
-  'src/utils/theme3.jpg'
+  'src/utils/theme3.jpg',
 ];
 
 function Settings({
@@ -98,19 +97,17 @@ function Settings({
     }
   };
 
+  // Reverting to three unique font options to prevent the bug from reoccurring.
+  // The 'key' now uses both the class and name to ensure uniqueness.
   const fonts = [
-    { name: 'Nunito', class: 'font-nunito' },
-    { name: 'Lato', class: 'font-lato' },
-    { name: 'Open Sans', class: 'font-opensans' },
-    { name: 'Montserrat', class: 'font-montserrat' },
-    { name: 'Roboto', class: 'font-roboto' },
-    { name: 'Merriweather', class: 'font-merriweather' },
+    { name: 'Default Sans', class: 'font-sans' },
+    { name: 'Default Serif', class: 'font-serif' },
+    { name: 'Monospace', class: 'font-mono' },
   ];
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 transition-colors duration-300">
-      <h2 className="text-3xl font-bold mb-8 text-center text-gray-800 dark:text-gray-200 flex items-center justify-center">
-        <Cog6ToothIcon className="h-8 w-8 mr-2 text-indigo-500" />
+    <div className="max-w-2xl mx-auto p-6 bg-white/50 dark:bg-gray-800/50 backdrop-blur-md rounded-lg shadow-xl border border-gray-200/50 dark:border-gray-700/50 transition-colors duration-300">
+      <h2 className="text-3xl font-extrabold mb-8 text-center text-blue-700 dark:text-blue-300 underline">
         Settings
       </h2>
 
@@ -136,14 +133,14 @@ function Settings({
 
       {/* Font Selection */}
       <div className="mb-8 p-6 bg-gray-50 dark:bg-gray-700 rounded-lg shadow-inner">
-        <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center">
+        <h3 className="text-xl font-semibold text-blue-700 dark:text-blue-300 mb-4 flex items-center">
           <PencilSquareIcon className="h-6 w-6 mr-2 text-blue-500" />
           Font Style
         </h3>
         <div className="flex flex-wrap gap-2">
           {fonts.map((font) => (
             <button
-              key={font.class}
+              key={font.class + font.name}
               onClick={() => setSelectedFont(font.class)}
               className={`px-4 py-2 rounded-full font-medium transition-colors duration-200 text-sm
                 ${selectedFont === font.class
@@ -159,7 +156,7 @@ function Settings({
 
       {/* Background Theme Section */}
       <div className="mb-8 p-6 bg-gray-50 dark:bg-gray-700 rounded-lg shadow-inner">
-        <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center">
+        <h3 className="text-xl font-semibold text-blue-700 dark:text-blue-300 mb-4 flex items-center">
           <SwatchIcon className="h-6 w-6 mr-2 text-teal-500" />
           Background Theme
         </h3>
@@ -183,6 +180,7 @@ function Settings({
                   src={imgUrl}
                   alt={`Theme Image ${index + 1}`}
                   className="w-full h-full object-cover"
+                  onError={(e) => { e.target.src = 'https://placehold.co/600x400/CCCCCC/000000?text=Image+Not+Found'; }}
                 />
               </button>
             ))}
@@ -209,7 +207,7 @@ function Settings({
 
       {/* App Lock Section */}
       <div className="p-6 bg-gray-50 dark:bg-gray-700 rounded-lg shadow-inner">
-        <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center">
+        <h3 className="text-xl font-semibold text-blue-700 dark:text-blue-300 mb-4 flex items-center">
           {isAppLocked ? <LockClosedIcon className="h-6 w-6 mr-2 text-red-500" /> : <LockOpenIcon className="h-6 w-6 mr-2 text-green-500" />}
           App Lock
         </h3>
