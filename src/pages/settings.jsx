@@ -107,7 +107,7 @@ function Settings({
 
   return (
     <div className="max-w-2xl mx-auto p-6 bg-white/50 dark:bg-gray-800/50 backdrop-blur-md rounded-lg shadow-xl border border-gray-200/50 dark:border-gray-700/50 transition-colors duration-300">
-      <h2 className="text-3xl font-extrabold mb-8 text-center text-blue-700 dark:text-blue-300 underline">
+      <h2 className="text-3xl font-bold mb-6 text-center text-gray-800 dark:text-gray-200">
         Settings
       </h2>
 
@@ -133,7 +133,7 @@ function Settings({
 
       {/* Font Selection */}
       <div className="mb-8 p-6 bg-gray-50 dark:bg-gray-700 rounded-lg shadow-inner">
-        <h3 className="text-xl font-semibold text-blue-700 dark:text-blue-300 mb-4 flex items-center">
+        <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center">
           <PencilSquareIcon className="h-6 w-6 mr-2 text-blue-500" />
           Font Style
         </h3>
@@ -156,7 +156,7 @@ function Settings({
 
       {/* Background Theme Section */}
       <div className="mb-8 p-6 bg-gray-50 dark:bg-gray-700 rounded-lg shadow-inner">
-        <h3 className="text-xl font-semibold text-blue-700 dark:text-blue-300 mb-4 flex items-center">
+        <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center">
           <SwatchIcon className="h-6 w-6 mr-2 text-teal-500" />
           Background Theme
         </h3>
@@ -207,7 +207,7 @@ function Settings({
 
       {/* App Lock Section */}
       <div className="p-6 bg-gray-50 dark:bg-gray-700 rounded-lg shadow-inner">
-        <h3 className="text-xl font-semibold text-blue-700 dark:text-blue-300 mb-4 flex items-center">
+        <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center">
           {isAppLocked ? <LockClosedIcon className="h-6 w-6 mr-2 text-red-500" /> : <LockOpenIcon className="h-6 w-6 mr-2 text-green-500" />}
           App Lock
         </h3>
