@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   UserCircleIcon,
   EnvelopeIcon,
@@ -10,7 +10,14 @@ import {
 } from '@heroicons/react/24/outline';
 import { UserIcon } from '@heroicons/react/24/solid';
 
-const Auth = ({ onAuthSuccess }) => {
+// Firebase Auth imports
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword
+} from 'firebase/auth';
+import { doc, setDoc, getDoc } from 'firebase/firestore'; // Import getDoc here too for Auth component
+
+const Auth = ({ db, auth, onAuthSuccess, isFirebaseReady }) => { // Added isFirebaseReady prop
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -22,53 +29,90 @@ const Auth = ({ onAuthSuccess }) => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Function to handle the form submission for both log-in and sign-up
+  const baseInputClasses = "appearance-none relative block w-full px-10 py-3 border border-gray-300 placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white";
+
   const handleAuth = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
+    if (!isFirebaseReady || !auth || !db) { // Check isFirebaseReady first
+      setError("Firebase services are still loading. Please wait a moment.");
+      setLoading(false);
+      return;
+    }
+
     try {
       if (isLogin) {
-        // --- LOGIN LOGIC PLACEHOLDER ---
-        // For log-in, we use the first name and password
-        console.log('Attempting to log in with:', firstName, password);
-        // Simulate a network request
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        // On success, pass the minimal user data
-        onAuthSuccess({ firstName });
-        // --- END LOGIN LOGIC ---
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        console.log('Firebase: User logged in:', userCredential.user.uid);
+        const appSpecificId = typeof window.__app_id !== 'undefined' ? window.__app_id : 'default-app-id';
+        const userDocRef = doc(db, 'artifacts', appSpecificId, 'users', userCredential.user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+        let profileData = {};
+        if (userDocSnap.exists()) {
+          profileData = userDocSnap.data().profile || {};
+        }
+
+        onAuthSuccess(userCredential.user, profileData);
       } else {
-        // --- SIGN UP LOGIC PLACEHOLDER ---
-        // For sign-up, all new user data is collected
-        const userData = {
-          email,
-          password,
-          firstName,
-          lastName,
-          dob,
-          nickname,
-          phoneNumber
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        console.log('Firebase: User signed up:', userCredential.user.uid);
+
+        const appSpecificId = typeof window.__app_id !== 'undefined' ? window.__app_id : 'default-app-id';
+        const userDocRef = doc(db, 'artifacts', appSpecificId, 'users', userCredential.user.uid);
+
+        const profileData = {
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          email: email.trim(),
+          dob: dob.trim(),
+          nickname: nickname.trim(),
+          phoneNumber: phoneNumber.trim(),
         };
-        console.log('Attempting to sign up with:', userData);
-        // Simulate a network request
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        // On success, pass the full user data
-        onAuthSuccess(userData);
-        // --- END SIGN UP LOGIC ---
+
+        await setDoc(userDocRef, { profile: profileData }, { merge: true });
+        console.log('Firestore: User profile saved for new user:', userCredential.user.uid);
+
+        onAuthSuccess(userCredential.user, profileData);
       }
     } catch (err) {
-      // Handle authentication errors here
-      setError(err.message || 'An error occurred during authentication.');
+      console.error("Firebase Auth Error:", err);
+      let errorMessage = 'An unexpected error occurred.';
+      switch (err.code) {
+        case 'auth/invalid-email':
+          errorMessage = 'Invalid email address format.';
+          break;
+        case 'auth/user-disabled':
+          errorMessage = 'This account has been disabled.';
+          break;
+        case 'auth/user-not-found':
+          errorMessage = 'No user found with this email.';
+          break;
+        case 'auth/wrong-password':
+          errorMessage = 'Incorrect password.';
+          break;
+        case 'auth/email-already-in-use':
+          errorMessage = 'This email is already in use. Try logging in.';
+          break;
+        case 'auth/weak-password':
+          errorMessage = 'Password should be at least 6 characters.';
+          break;
+        case 'auth/operation-not-allowed':
+          errorMessage = 'Email/password authentication is not enabled. Please contact support.';
+          break;
+        default:
+          errorMessage = err.message || 'Authentication failed. Please try again.';
+          break;
+      }
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
-  // Helper to switch between log-in and sign-up forms and reset state
   const toggleAuthMode = () => {
     setIsLogin(!isLogin);
-    // Reset all form fields when switching modes
     setEmail('');
     setPassword('');
     setFirstName('');
@@ -78,6 +122,9 @@ const Auth = ({ onAuthSuccess }) => {
     setPhoneNumber('');
     setError('');
   };
+
+  // Button is disabled if loading, or if Firebase isn't yet ready
+  const isSubmitDisabled = loading || !isFirebaseReady;
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors duration-300 font-poppins">
@@ -93,42 +140,42 @@ const Auth = ({ onAuthSuccess }) => {
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleAuth}>
           <div className="rounded-md shadow-sm space-y-4">
-            {isLogin ? (
-              <>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <UserIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
-                  </div>
-                  <input
-                    id="login-name"
-                    name="loginName"
-                    type="text"
-                    required
-                    className="appearance-none rounded-t-md relative block w-full px-10 py-3 border border-gray-300 placeholder-white text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    placeholder="First Name"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                  />
+            {!isLogin && (
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <EnvelopeIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
                 </div>
-              </>
+                <input
+                  id="email-address"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  className={baseInputClasses + " rounded-t-md"}
+                  placeholder="Email address"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+            )}
+            {isLogin ? (
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <EnvelopeIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
+                </div>
+                <input
+                  id="login-email"
+                  name="loginEmail"
+                  type="email"
+                  required
+                  className={baseInputClasses + " rounded-t-md"}
+                  placeholder="Email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
             ) : (
               <>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <EnvelopeIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
-                  </div>
-                  <input
-                    id="email-address"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    required
-                    className="appearance-none rounded-t-md relative block w-full px-10 py-3 border border-gray-300 placeholder-white text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    placeholder="Email address"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </div>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <UserIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
@@ -138,7 +185,7 @@ const Auth = ({ onAuthSuccess }) => {
                     name="firstName"
                     type="text"
                     required
-                    className="appearance-none rounded-none relative block w-full px-10 py-3 border border-gray-300 placeholder-white text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    className={baseInputClasses + " rounded-none"}
                     placeholder="First Name (required)"
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
@@ -152,7 +199,7 @@ const Auth = ({ onAuthSuccess }) => {
                     id="last-name"
                     name="lastName"
                     type="text"
-                    className="appearance-none rounded-none relative block w-full px-10 py-3 border border-gray-300 placeholder-white text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    className={baseInputClasses + " rounded-none"}
                     placeholder="Last Name (optional)"
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
@@ -166,7 +213,7 @@ const Auth = ({ onAuthSuccess }) => {
                     id="dob"
                     name="dob"
                     type="date"
-                    className="appearance-none rounded-none relative block w-full px-10 py-3 border border-gray-300 placeholder-white text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    className={baseInputClasses + " rounded-none"}
                     placeholder="Date of Birth"
                     value={dob}
                     onChange={(e) => setDob(e.target.value)}
@@ -180,7 +227,7 @@ const Auth = ({ onAuthSuccess }) => {
                     id="nickname"
                     name="nickname"
                     type="text"
-                    className="appearance-none rounded-none relative block w-full px-10 py-3 border border-gray-300 placeholder-white text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    className={baseInputClasses + " rounded-none"}
                     placeholder="Nickname"
                     value={nickname}
                     onChange={(e) => setNickname(e.target.value)}
@@ -194,7 +241,7 @@ const Auth = ({ onAuthSuccess }) => {
                     id="phone-number"
                     name="phoneNumber"
                     type="tel"
-                    className="appearance-none rounded-none relative block w-full px-10 py-3 border border-gray-300 placeholder-white text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    className={baseInputClasses + " rounded-none"}
                     placeholder="Phone Number"
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value)}
@@ -212,7 +259,7 @@ const Auth = ({ onAuthSuccess }) => {
                 type="password"
                 autoComplete={isLogin ? 'current-password' : 'new-password'}
                 required
-                className={`appearance-none relative block w-full px-10 py-3 border border-gray-300 placeholder-white text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white ${isLogin ? 'rounded-b-md' : 'rounded-none'}`}
+                className={baseInputClasses + " " + (isLogin ? 'rounded-b-md' : 'rounded-none')}
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -220,15 +267,20 @@ const Auth = ({ onAuthSuccess }) => {
             </div>
           </div>
           {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+          {!isFirebaseReady && (
+            <p className="text-yellow-600 dark:text-yellow-400 text-sm text-center">
+              Waiting for Firebase services...
+            </p>
+          )}
           <div>
             <button
               type="submit"
-              disabled={loading}
+              disabled={isSubmitDisabled}
               className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {loading ? (
                 <span className="flex items-center">
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
